@@ -60,3 +60,16 @@ DELETE total Executed : 1000
 |    2   |  25.60% |     0.47 |       256 |                xxxxxxxxxxxxxx|
 |    3   |  14.00% |     0.26 |       140 |    xxxxxxxxxxxxxxxxxxxxxxxxxx|
 --------------------------------------------------------------------------
+
+
+
+binlog-rollbakc.pl      使用说明：
+混滚误操作语句：update js_landing_page set goodsflowkey='zdy_cps_kai_si_sheng_yang',sort=5 where sort=6; 
+
+1.首先拿到 这行这条语句的开始时间以及结束时间：
+2.其次拿到 js_landing_page 这张表的表结构，在一个测试db 上建好一个空表
+3.把对应的binlog scp 到具有 该回滚脚步的服务器上
+4.执行脚步得到 反解后的结果
+---说明：
+    该脚本先是完全利用mysqlbinlog 工具解析出这个binlog 里边的内容
+    然后再到脚本层面过滤掉 filter，得出反解结果
