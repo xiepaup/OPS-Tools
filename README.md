@@ -73,3 +73,7 @@ binlog-rollbakc.pl      使用说明：
 ---说明：
     该脚本先是完全利用mysqlbinlog 工具解析出这个binlog 里边的内容
     然后再到脚本层面过滤掉 filter，得出反解结果
+
+
+Twemproxy 命令支持列表：
+https://raw.githubusercontent.com/twitter/twemproxy/master/notes/redis.md
