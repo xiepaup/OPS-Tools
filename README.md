@@ -86,3 +86,17 @@ Redis服务器[127.0.0.1:6388]
 
 Twemproxy 命令支持列表：
 https://raw.githubusercontent.com/twitter/twemproxy/master/notes/redis.md
+
+
+
+
+----Add Redis Tools ,modify at redis-cli , function --bigkeys
+
+add an arguments , --bigkey-numb 
+
+VITOXIE-MB1:src xiean$ ./redis-cli-new -p 2837 --bigkeys --bigkey-numb  3
+
+Biggest string Key Top   1  found 'str.de' has 5 bytes
+Biggest string Key Top   2  found 'str.ee' has 5 bytes
+Biggest string Key Top   3  found 'str.d' has 4 bytes
+Biggest   hash Key Top   1  found 'hash.a' has 2 fields
