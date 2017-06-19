@@ -2,7 +2,7 @@
 //  redis-cli-new.c
 //  redis_4_rc1
 //
-//  Created by 谢安 on 17/06/2017.
+//  Created by è°¢å® on 17/06/2017.
 //
 //
 
@@ -2091,10 +2091,9 @@ static void getKeySizes(redisReply *keys, int *types,
 const int  MAXBIGKEYS = 100;
 
 typedef struct BIGKEYS{
-    int curSize;
     int size;
-    sds keyName[MAXBIGKEYS];
-    unsigned long long keySize[MAXBIGKEYS];
+    sds keyName[100];
+    unsigned long long keySize[100];
 }typeBigKeys;
 
 
@@ -2103,7 +2102,6 @@ static void findBigKeys(int bigkeys_num) {
     unsigned long long counts[5] = {0}, totalsize[5] = {0};
 //    unsigned long long biggest[5] = {0}, counts[5] = {0}, totalsize[5] = {0};
     unsigned long long sampled = 0, total_keys, totlen=0, *sizes=NULL, it=0;
-//    sds maxkeys[5] = {0};
     char *typename[] = {"string","list","set","hash","zset"};
     char *typeunit[] = {"bytes","items","members","fields","members"};
     
@@ -2114,9 +2112,8 @@ static void findBigKeys(int bigkeys_num) {
     typeBigKeys *bigkeys[TYPE_NONE]={0};
     // Init Space !
     for (int i = 0;i <TYPE_NONE;i++){
-        bigkeys[i] = (typeBigKeys *)malloc(sizeof(typeBigKeys) );
+        bigkeys[i] = (typeBigKeys *)zrealloc(bigkeys[i],sizeof(typeBigKeys));
         bigkeys[i]->size = bigkeys_num;
-        bigkeys[i]->curSize = 0;
         for (int j=0;j<bigkeys_num;j++){
             bigkeys[i]->keySize[j] = 0;
             bigkeys[i]->keyName[j] = sdsempty();
@@ -2175,7 +2172,7 @@ static void findBigKeys(int bigkeys_num) {
             counts[type]++;
             totlen += keys->element[i]->len;
             sampled++;
-//            fprintf(stdout, "New key : %s\n",keys->element[i]->str);
+            //fprintf(stdout, "New key : %s\n",keys->element[i]->str);
             // the new key is bigger than the largest , or bigger than the lease biggger one !
             if(bigkeys[type]->keySize[0] <= sizes[i] || bigkeys[type]->keySize[bigkeys[type]->size-1] < sizes[i] ) {
                 
@@ -2192,13 +2189,14 @@ static void findBigKeys(int bigkeys_num) {
                     if (sdslen( bigkeys[type]->keyName[kk] )> 0){
                         kk++;
                     }else{
-//                        fprintf(stdout, "Find the index to insert bigkey idx:%d,key:%s,size:%llu\n",kk,bigkeys[type]->keyName[kk],bigkeys[type]->keySize[kk]);
+                        //fprintf(stdout, "Find the index to insert bigkey idx:%d,key:%s,size:%llu\n",kk,bigkeys[type]->keyName[kk],bigkeys[type]->keySize[kk]);
                         break;
                     }
                 }
                 
-                if (kk != 0 && kk != bigkeys[type]->size - 1) {
+                if (kk != 0 && kk > bigkeys[type]->size ) {
                     for( int j=bigkeys[type]->size-1 ; j > kk ; j--) {
+                        fprintf(stdout,"innser replace ,,, j:%d,kk:%d\n",j,kk);
                         bigkeys[type]->keyName[j] = sdscpy(bigkeys[type]->keyName[j], bigkeys[type]->keyName[j-1]);
                         bigkeys[type]->keySize[j] = bigkeys[type]->keySize[j-1];
                         if(!bigkeys[type]->keyName[j]) {
@@ -2207,6 +2205,8 @@ static void findBigKeys(int bigkeys_num) {
                         }
                       }
                 }
+
+		if (kk == bigkeys[type]->size){ kk--;}
                 // if the first one OR  last one  OR kk == j , just replace it , do not need move any stat data !
                 bigkeys[type]->keyName[kk] = sdscpy(bigkeys[type]->keyName[kk],keys->element[i]->str);
                 bigkeys[type]->keySize[kk] = sizes[i];
@@ -2218,9 +2218,9 @@ static void findBigKeys(int bigkeys_num) {
                 printf("[%05.2f%%] Sampled %llu keys so far\n", pct, sampled);
             }
             
-//            for (int tt =0; tt < bigkeys[type]->size;tt++){
-//                fprintf(stdout, "Stats Keys ++++++++ :%s,s:%llu,top:%d\n",bigkeys[0]->keyName[tt],bigkeys[0]->keySize[tt],tt);
-//            }
+            //for (int tt =0; tt < bigkeys[type]->size;tt++){
+            //    fprintf(stdout, "Stats Keys ++++++++ :%s,s:%llu,top:%d\n",bigkeys[0]->keyName[tt],bigkeys[0]->keySize[tt],tt);
+            //}
         }
         
         /* Sleep if we've been directed to do so */
@@ -2228,7 +2228,7 @@ static void findBigKeys(int bigkeys_num) {
             usleep(config.interval);
         }
         
-        freeReplyObject(reply);
+        if (reply) freeReplyObject(reply);
     } while(it != 0);
     
     if(types) zfree(types);
@@ -2262,8 +2262,8 @@ static void findBigKeys(int bigkeys_num) {
     for(i=0;i<TYPE_NONE;i++) {
         for (int j=0;j<bigkeys[i]->size;j++){
             sdsfree(bigkeys[i]->keyName[j]);
+            zfree(bigkeys[i]);
         }
-//        sdsfree(maxkeys[i]);
     }
     
     /* Success! */
