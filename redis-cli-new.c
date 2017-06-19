@@ -230,7 +230,7 @@ static int helpEntriesLen;
 
 static sds cliVersion(void) {
     sds version;
-    version = sdscatprintf(sdsempty(), "%s", REDIS_VERSION);
+    version = sdscatprintf(sdsempty(), "%s", "3.2.9-xiepaup-V1.0");
     
     /* Add git commit and working tree status when available */
     if (strtoll(redisGitSHA1(),NULL,16)) {
