@@ -2,7 +2,8 @@
 //  redis-cli-new.c
 //  redis_4_rc1
 //
-//  Created by è°¢å® on 17/06/2017.
+//  Created by xiepaup on 17/06/2017.
+//  Mail xiepaup@163.com
 //
 //
 
@@ -2172,7 +2173,6 @@ static void findBigKeys(int bigkeys_num) {
             counts[type]++;
             totlen += keys->element[i]->len;
             sampled++;
-            //fprintf(stdout, "New key : %s\n",keys->element[i]->str);
             // the new key is bigger than the largest , or bigger than the lease biggger one !
             if(bigkeys[type]->keySize[0] <= sizes[i] || bigkeys[type]->keySize[bigkeys[type]->size-1] < sizes[i] ) {
                 
@@ -2189,7 +2189,6 @@ static void findBigKeys(int bigkeys_num) {
                     if (sdslen( bigkeys[type]->keyName[kk] )> 0){
                         kk++;
                     }else{
-                        //fprintf(stdout, "Find the index to insert bigkey idx:%d,key:%s,size:%llu\n",kk,bigkeys[type]->keyName[kk],bigkeys[type]->keySize[kk]);
                         break;
                     }
                 }
@@ -2217,10 +2216,6 @@ static void findBigKeys(int bigkeys_num) {
             if(sampled % 1000000 == 0) {
                 printf("[%05.2f%%] Sampled %llu keys so far\n", pct, sampled);
             }
-            
-            //for (int tt =0; tt < bigkeys[type]->size;tt++){
-            //    fprintf(stdout, "Stats Keys ++++++++ :%s,s:%llu,top:%d\n",bigkeys[0]->keyName[tt],bigkeys[0]->keySize[tt],tt);
-            //}
         }
         
         /* Sleep if we've been directed to do so */
