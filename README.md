@@ -72,6 +72,7 @@ Twemproxy 命令支持列表： https://raw.githubusercontent.com/twitter/twempr
 ----Add Redis Tools ,modify at redis-cli , function --bigkeys
 add an arguments , --bigkey-numb
 
+```
 VITOXIE-MB1:src xiean$ ./redis-cli-new -p 2837 --bigkeys --bigkey-numb 3
 
 Biggest string Key Top 1 found 'xxxG_NEWMATCH_VOD_DATA_7f7a2a2fb5f780a13fecd9f1e51bdf8a' has 53170 bytes 
@@ -93,3 +94,4 @@ Biggest hash Key Top 3 found '2017PushData_xxxG_97' has 643985 fields
 Biggest zset Key Top 1 found 'xxxG_video_UserSubscribe_12_Sort' has 79865 members 
 Biggest zset Key Top 2 found 'xxxG_UnifiedAuth_iApiId_6_20170619' has 79568 members 
 Biggest zset Key Top 3 found 'xxxG_video_UserSubscribe_18_Sort' has 53192 members
+```
