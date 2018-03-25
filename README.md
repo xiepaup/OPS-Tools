@@ -1,12 +1,16 @@
 
 About-MySQL/Linux/Oracle Tools
 
-###MySQLTOOLS:
 
-#####1. orzdba 
+### MySQLTOOLS:
+
+
+##### 1. orzdba 
+
 ----- Linux/MySQL Monitor Tools (opensource by AliBaBa)
 
-####2. xa-general-statistic.py 
+#### 2. xa-general-statistic.py 
+
 ----- 解析查询日志，获取SELECT、DELETE、UPDATE、INSERT 语句执行情况(opensource by xiepaup)
 
     此工具目前简单粗暴： 使用目的： 1.能够获得一段时间内表上执行 SELECT、DELETE、UPDATE、INSERT 次数，以及DB使用情况 2.标红执行占比大于40% 的表，直观反应不合理请求。 3.能够反应整个业务是否分配均匀，是否存在不合理业务在刷DB
@@ -38,14 +42,15 @@ INSERT total Executed : 18281
 | 3 | 8.24% | 2.75 | 1506 | xxxxxxxxxxxxxxxxxxxx|
 ```
 
-#### 3. binlog-rollbakc.pl 
+#### 3.binlog-rollbakc.pl 
 -- 使用说明： 混滚误操作语句：update js_landing_page set goodsflowkey='zdy_cps_kai_si_sheng_yang',sort=5 where sort=6;
 
 1.首先拿到 这行这条语句的开始时间以及结束时间： 2.其次拿到 js_landing_page 这张表的表结构，在一个测试db 上建好一个空表 3.把对应的binlog scp 到具有 该回滚脚步的服务器上 4.执行脚步得到 反解后的结果 ---说明： 该脚本先是完全利用mysqlbinlog 工具解析出这个binlog 里边的内容 然后再到脚本层面过滤掉 filter，得出反解结果
 
 ### RedisTools:
 
-####1. redis_key_distribution.py 
+#### 1.redis_key_distribution.py 
+
 -- 统计redis key类型数据大小分布 
 -- 原理：使用redis命令： scan、pipline、type 和 debug object 来得到 redis key 信息
 
@@ -67,7 +72,7 @@ Redis服务器[127.0.0.1:6388]
 
 Twemproxy 命令支持列表： https://raw.githubusercontent.com/twitter/twemproxy/master/notes/redis.md
 
-#### 3. redis-cli-new 
+#### 2. redis-cli-new 
 可以通过指定 --bigkey-numb ，得到各种类型大key TOP N
 ----Add Redis Tools ,modify at redis-cli , function --bigkeys
 add an arguments , --bigkey-numb
@@ -94,4 +99,6 @@ Biggest hash Key Top 3 found '2017PushData_xxxG_97' has 643985 fields
 Biggest zset Key Top 1 found 'xxxG_video_UserSubscribe_12_Sort' has 79865 members 
 Biggest zset Key Top 2 found 'xxxG_UnifiedAuth_iApiId_6_20170619' has 79568 members 
 Biggest zset Key Top 3 found 'xxxG_video_UserSubscribe_18_Sort' has 53192 members
+
+comment: you can compile on redis source 3.2 code ~
 ```
