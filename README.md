@@ -1,9 +1,8 @@
 
-OPS-Tools
-
 About-MySQL/Linux/Oracle Tools
 
 ###MySQLTOOLS:
+
 #####1. orzdba 
 ----- Linux/MySQL Monitor Tools (opensource by AliBaBa)
 
@@ -38,6 +37,7 @@ INSERT total Executed : 18281
 | 2 | 8.57% | 2.86 | 1566 | xxxxxxxxxxx| 
 | 3 | 8.24% | 2.75 | 1506 | xxxxxxxxxxxxxxxxxxxx|
 ```
+
 #### 3. binlog-rollbakc.pl 
 -- 使用说明： 混滚误操作语句：update js_landing_page set goodsflowkey='zdy_cps_kai_si_sheng_yang',sort=5 where sort=6;
 
@@ -49,19 +49,20 @@ INSERT total Executed : 18281
 -- 统计redis key类型数据大小分布 
 -- 原理：使用redis命令： scan、pipline、type 和 debug object 来得到 redis key 信息
 
+```
 统计时间:[Fri Jul 29 17:06:29 2016 ~ Fri Jul 29 17:06:29 2016] 
 Redis服务器[127.0.0.1:6388] 
 数据类型和数据大小分布情况如下:
 
+
 |KEY TYPE | KEY COUNT | KEY 64(byte) | KEY 128 | Key 512 | Key 1024 | Key 2048 | Key 3072 | Key 4096 | Key 5120 | Key 6044 | Key large | 
-|--:|
 | String | 2 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 
 | LIST | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 
 | HASH | 2 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
- | SET | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 
- | ZSET | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| SET | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 
+| ZSET | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
-
+```
 ------------------------
 
 Twemproxy 命令支持列表： https://raw.githubusercontent.com/twitter/twemproxy/master/notes/redis.md
