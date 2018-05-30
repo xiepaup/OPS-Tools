@@ -1,29 +1,75 @@
+package db
 
-func GetMySQLConn(addr, user, paswd string) *sql.DB {
 
-	if addr != "" {
-		if user == "" || paswd == "" {
-			user = DEFALUT_USER_NAME
-			paswd = DEFAULT_USER_PSWD
-		}
+/*
+* DATE : 2018/5/21 10:17
+* VERSION :  2.1.1
+* EMAIL : xiepaup@163.com
+*/
+
+
+import (
+	"database/sql"
+	"fmt"
+	"strconv"
+	_ "github.com/go-sql-driver/mysql"
+)
+
+type MySQLContext struct {
+	Host string
+	Port string
+	User string
+	Password string
+	Database string
+	Addr string
+	Conn *sql.DB
+}
+
+func NewMySQLContext(host,port,user,password string) (*MySQLContext) {
+	myContext := &MySQLContext{
+		Addr:fmt.Sprintf("%s:%s",host,port),
+		Host:host,
+		User:user,
+		Port:port,
+		Password:password,
+	}
+	myContext.InitConnection()
+	return myContext
+}
+
+
+
+func (this *MySQLContext) GetConn()(*sql.DB)  {
+
+	if this.Conn == nil{
+		//fmt.Println("lost mysql connection ,recreate it !")
+		this.InitConnection()
+	}
+	return  this.Conn
+}
+
+func (this *MySQLContext) InitConnection() {
+	this.Addr = fmt.Sprintf("%s:%s",this.Host,this.Port)
+	if this.Addr != "" {
+
 		//"root:pswd@tcp(127.0.0.1:3306)/test?charset=utf8"
-		tcpaddr := fmt.Sprintf("%s:%s@tcp(%s)/test", user, paswd, addr)
+		tcpaddr := fmt.Sprintf("%s:%s@tcp(%s)/%s", this.User, this.Password, this.Addr,this.Database)
 		db, err := sql.Open("mysql", tcpaddr)
 		if err != nil {
 			// TODO add connect to mysql error !,maybe this will report !
 			fmt.Println("connect to mysql Error !,TODO ----,%s", err)
 		}
 		db.Ping()
-		return db
+		this.Conn = db
 	}
-	return nil
 }
 
-func QueryMySQLDataBySQL(conn *sql.DB, sql string) ([]map[string]string, error) {
+func (this *MySQLContext) Query(format string,args ...interface{})  ([]map[string]string, error) {
 	var reslut []map[string]string
-	rows, err := conn.Query(sql)
+	rows, err := this.GetConn().Query(fmt.Sprintf(format,args...))
 	if err != nil {
-		fmt.Println("query data error : %s", err)
+		// TODO -- this output no need ?
+		//fmt.Println("query data error : %s", err)
 		return reslut, err
 	}
 
@@ -36,7 +82,7 @@ func QueryMySQLDataBySQL(conn *sql.DB, sql string) ([]map[string]string, error) 
 		scans[k] = &vals[k]
 	}
 	for rows.Next() {
-	    record := make(map[string]string)
+		record := make(map[string]string)
 		err = rows.Scan(scans...)
 		//row := make(map[string]string)
 		for k, v := range vals {
@@ -49,4 +95,49 @@ func QueryMySQLDataBySQL(conn *sql.DB, sql string) ([]map[string]string, error) 
 	}
 
 	return reslut, nil
+}
+
+
+func (this *MySQLContext) IsAlive() (bool,error) {
+	_,err := this.Query("SELECT NOW()")
+	if err != nil {
+		return false,err
+	}
+	return true,nil
+}
+
+func (this *MySQLContext) SetHost (h string){
+	if len(h) != 0 {
+		this.Host = h
+	}else {
+		panic(fmt.Sprintf("none host inputed !"))
+	}
+}
+
+func (this *MySQLContext) SetPort(p string) {
+	if len(p) != 0{
+		_ ,err := strconv.Atoi(p)
+		if err != nil{
+			panic(fmt.Sprintf("input port[%s] none numberic ",p))
+		}
+		this.Port = p
+	}
+}
+
+func (this *MySQLContext) SetUser(u string) {
+	if len(u) != 0{
+		this.User = u
+	}else {
+		panic(fmt.Sprintf("none username inputed !"))
+	}
+}
+
+
+func (this *MySQLContext) ToString() string {
+	return fmt.Sprintf("%v",this)
+}
+
+
+func (this *MySQLContext)Close() {
+	this.Conn.Close()
 }
