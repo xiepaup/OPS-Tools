@@ -4,12 +4,42 @@ About-MySQL/Linux/Oracle Tools
 
 ### MySQLTOOLS:
 
+```
+| |____mysql_slave_admin.py
+| |____orzdba
+| |____mysql_status.sh
+| |____mysql_physicbackup.sh
+| |____orzdba工具使用说明.pdf
+| |____xa-general-statistic.py
+| |____mysql_rotate_slowlog.sh
+| |____binlog-rollbakc.pl
+| |____mysql_admin.py
+| |____mysql_utilities
+| | | |____mysqldiff.py
+| | | |____mysqldbcompare.py
+| | | |____mysqlauditadmin.py
+| | | |____mysqlrplshow.py
+| | | |____mysqlserverclone.py
+| | | |____mysqlserverinfo.py
+| | | |____mysqldbcopy.py
+| | | |____mysqlmetagrep.py
+| | | |____mysqldiskusage.py
+| | | |____mysqlrplcheck.py
+| | | |____mysqlprocgrep.py
+| | | |____mysqlfailover.py
+| | | |____mysqlindexcheck.py
+| | | |____mysqldbexport.py
+| | | |____mysqluc.py
+| | | |____mysqlreplicate.py
+| | | |____mysqldbimport.py
+| | | |____mysqluserclone.py
+| | | |____mysqlauditgrep.py
+| | | |____mysqlrpladmin.py
+|____otherTools
+|____linux_wellcome.sh
+```
 
-##### 1. orzdba 
-
------ Linux/MySQL Monitor Tools (opensource by AliBaBa)
-
-#### 2. xa-general-statistic.py 
+#### 1. xa-general-statistic.py 
 
 ----- 解析查询日志，获取SELECT、DELETE、UPDATE、INSERT 语句执行情况(opensource by xiepaup)
 
@@ -42,12 +72,29 @@ INSERT total Executed : 18281
 | 3 | 8.24% | 2.75 | 1506 | xxxxxxxxxxxxxxxxxxxx|
 ```
 
-#### 3.binlog-rollbakc.pl 
+#### 2.binlog-rollbakc.pl 
 -- 使用说明： 混滚误操作语句：update js_landing_page set goodsflowkey='zdy_cps_kai_si_sheng_yang',sort=5 where sort=6;
 
 1.首先拿到 这行这条语句的开始时间以及结束时间： 2.其次拿到 js_landing_page 这张表的表结构，在一个测试db 上建好一个空表 3.把对应的binlog scp 到具有 该回滚脚步的服务器上 4.执行脚步得到 反解后的结果 ---说明： 该脚本先是完全利用mysqlbinlog 工具解析出这个binlog 里边的内容 然后再到脚本层面过滤掉 filter，得出反解结果
 
+--------------------------------------------------------------
+
 ### RedisTools:
+
+```
+|____redisTools
+| |____redis-cli-new
+| |____redis-cli-new.c
+| |____RedisClusterMonitor.py
+| |____goopsrc
+| | |____rdb
+| | |____mem
+| | |____aof
+| |____redis_key_distribution.py
+| |____redis_key_delete.py
+| |____redis-audit.rb
+| |____redis-sampler.rb
+```
 
 #### 1.redis_key_distribution.py 
 
@@ -68,9 +115,6 @@ Redis服务器[127.0.0.1:6388]
 | ZSET | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
 ```
-------------------------
-
-Twemproxy 命令支持列表： https://raw.githubusercontent.com/twitter/twemproxy/master/notes/redis.md
 
 #### 2. redis-cli-new 
 可以通过指定 --bigkey-numb ，得到各种类型大key TOP N
@@ -101,4 +145,49 @@ Biggest zset Key Top 2 found 'xxxG_UnifiedAuth_iApiId_6_20170619' has 79568 memb
 Biggest zset Key Top 3 found 'xxxG_video_UserSubscribe_18_Sort' has 53192 members
 
 comment: you can compile on redis source 3.2 code ~
+``
+
+
+---------------------------------------------------
+
+### osperftools  操作系统诊断工具，性能挖掘.
+
 ```
+| | |____perf-stat-hist
+| | |____uprobe
+| | |____kprobe
+| | |____iolatency
+| | |____reset-ftrace
+| | |____execsnoop
+| | |____opensnoop
+| | |____killsnoop
+| | |____cachestat
+| | |____bitesize
+| | |____tpoint
+| | |____functrace
+| | |____syscount
+| | |____funcslower
+| | |____iosnoop
+| | |____tcpretrans
+| | |____funccount
+| | |____funcgraph
+| |____iolatency
+| |____execsnoop
+| |____opensnoop
+| |____killsnoop
+| | |____tpoint
+| |____syscount
+| |____disk ---> bitesize
+| |____iosnoop
+| | |____cachestat
+| |____kernel
+| | |____kprobe
+| | |____functrace
+| | |____funcslower
+| | |____funccount
+| | |____funcgraph
+```
+
+
+
+Twemproxy 命令支持列表： https://raw.githubusercontent.com/twitter/twemproxy/master/notes/redis.md
