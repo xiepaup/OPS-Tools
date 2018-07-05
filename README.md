@@ -44,9 +44,9 @@ About-MySQL/Linux/Oracle Tools
 ----- 解析查询日志，获取SELECT、DELETE、UPDATE、INSERT 语句执行情况(opensource by xiepaup)
 
 此工具目前简单粗暴： 使用目的： 
-	     1.能够获得一段时间内表上执行 SELECT、DELETE、UPDATE、INSERT 次数，以及DB使用情况 
-		  2.标红执行占比大于40% 的表，直观反应不合理请求。 
-		  3.能够反应整个业务是否分配均匀，是否存在不合理业务在刷DB
+	1.能够获得一段时间内表上执行 SELECT、DELETE、UPDATE、INSERT 次数，以及DB使用情况 
+	2.标红执行占比大于40% 的表，直观反应不合理请求。 
+	3.能够反应整个业务是否分配均匀，是否存在不合理业务在刷DB
 ```
 使用方法如下：
 
@@ -77,9 +77,15 @@ INSERT total Executed : 18281
 ```
 
 #### 2.binlog-rollbakc.pl 
--- 使用说明： 混滚误操作语句：update js_landing_page set goodsflowkey='zdy_cps_kai_si_sheng_yang',sort=5 where sort=6;
 
-1.首先拿到 这行这条语句的开始时间以及结束时间： 2.其次拿到 js_landing_page 这张表的表结构，在一个测试db 上建好一个空表 3.把对应的binlog scp 到具有 该回滚脚步的服务器上 4.执行脚步得到 反解后的结果 ---说明： 该脚本先是完全利用mysqlbinlog 工具解析出这个binlog 里边的内容 然后再到脚本层面过滤掉 filter，得出反解结果
+#####使用说明： 混滚误操作语句：update js_landing_page set goodsflowkey='zdy_cps_kai_si_sheng_yang',sort=5 where sort=6;
+
+	1.首先拿到 这行这条语句的开始时间以及结束时间： 
+	2.其次拿到 js_landing_page 这张表的表结构，在一个测试db 上建好一个空表 
+	3.把对应的binlog scp 到具有 该回滚脚步的服务器上 
+	4.执行脚步得到 反解后的结果 
+
+#####说明： 该脚本先是完全利用mysqlbinlog 工具解析出这个binlog 里边的内容 然后再到脚本层面过滤掉 filter，得出反解结果
 
 --------------------------------------------------------------
 
