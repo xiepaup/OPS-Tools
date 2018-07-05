@@ -1,0 +1,196 @@
+Release 1.2.1 (Released February 28, 2013)
+------------------------------------------
+
+- BUG#13956819: MySQL Utilities requires changes for RPM packaging
+- BUG#14157692: pass external scripts info from failover and switchover
+- BUG#14172941: LogParserError: Failed parsing Slow Query line
+- BUG#14348501: Utilities forget to quote tables, databases with backticks
+- BUG#16164767: mysqlreplicate fails to start slave
+- BUG#16167359: remove exit() calls and replace with sys.exit()
+- BUG#16177167: switchover demote-master, new master fails to forgot it was slave
+- BUG#16237986: error for invalid connections does not provide enough detail
+- BUG#16238348: Python version not detected
+- BUG#16243584: mysqlrpladmin stop, start, reset must require --slaves option
+- BUG#16283254: Branding of Source Files
+- BUG#16283330: failover algorithm does not include wait for retrieved gtid set
+- BUG#16290692: read port and socket information from login-path group
+- BUG#68356: failed test with MySQL 5.5
+- WL#6276: MySQL Utilities Documentation Format Change to Docbook
+
+Release 1.2.0 (Released January 26, 2013)
+-----------------------------------------
+
+- BUG#13956819: MySQL Utilities requires changes for RPM packaging
+- WL#6256: Change password handling
+- WL#6262: Audit log parser
+
+Release 1.1.2 (Released January 17, 2013)
+-----------------------------------------
+
+- BUG#13931340: mysqluserclone should dump all users
+- BUG#14712211: mysqluc fails to look for the utilities for a given utildir
+- BUG#15867353: Add GTID handling to mysqldbcopy, mysqldbexport
+- BUG#16010766: gtid enabled utilities need to check version of the server
+- BUG#16016887: mysqldiskusage reports missing binlog
+- BUG#16020953: --timeout option in mysqlfailover throws error
+- BUG#16023646: mysqldbcopy cannot copy world_innodb sample database
+- BUG#16023781: switchover can fail to complete if there are errors in slaves
+- BUG#16035934: unused --server option in mysqldbcompare
+- BUG#16037123: mysqlrplshow fails to report connection errors
+- BUG#16072863: gtid-enabled utilities need better error handling
+- BUG#14158371: mysqlserverinfo reports server offline on authentication error
+
+Release 1.1.1 (Released December 14, 2012)
+------------------------------------------
+
+- BUG#13559593: mysqldiskusage crashes if empty is specified and no empty dbs
+- BUG#14021584: mysqlfailover fails to promote a slave when master shut down
+- BUG#14031924: mysqlfailover fails to promote a slave w/explicit candidates
+- BUG#14624358: mysqlfailover should report gtid information for master
+- BUG#14711565: Exception thrown at Server module on unsupported server vers
+- BUG#14711624: mysqldbexport can fail if column is none
+- BUG#14802229: Correct GTID identifiers changed by BUG#14775984
+- BUG#15867353: Add GTID handling to mysqldbcopy, mysqldbexport
+- BUG#14735026: workbench scripts fail if db has non numeric
+
+Release 1.1.0 (Released September 21, 2012)
+-------------------------------------------
+
+- WL#5752: MySQL Utilities Console (mysqluc)
+
+Release 1.0.7 (Released August 31, 2012)
+----------------------------------------
+
+- BUG#14208415: mysqlrepladmin produces a trace when log can not be written
+- BUG#14378252: replication user check fails with wildcard host
+- BUG#14381965: need better error reporting in health reports
+- BUG#14382552: Check for duplicate UUIDs
+- BUG#14382982: no warning issued for missing --report-host
+- BUG#14383189: require --master-info-repo=TABLE for failover
+- BUG#14488825: Regression testing fixes
+- BUG#14501757: mysqlrplshow -r includes spurious master
+- BUG#14526940: Master can be used in slaves list
+- BUG#14383094: errors on reading master.info file
+- BUG#14238782: serverclone shouldn't del datadir
+
+Release 1.0.6 (Released July 14, 2012)
+--------------------------------------
+
+- BUG#13986713: Wrong slave health output when slave uses loopback addr
+- BUG#13986931: Parser code in wrong location
+- BUG#14008015: Minor spelling errors
+- BUG#14008057: Missing man page build
+- BUG#14021531: Replication user check fails for global host
+- BUG#14021551: mysqlrplcheck not reading slave_master_info table
+- BUG#14021576: exception thrown for GTID servers without password
+- BUG#14031894: mysqlfailover fails to cleanup on error
+- BUG#14080657: Slave election can fail if FILE vs TABLE used
+- BUG#14123022: mysqlfailover fails to report stopped slaves
+- BUG#14140174: failover doesn't see new slave
+- BUG#14147098: mysqlfailover fails if --force used on initial load
+- BUG#14158085: connection fails to connect for aliases
+- BUG#14159369: fail|switchover can fail if --master-info-repository=file
+- BUG#14208442: incorrect help text for --discover-slaves-login
+- BUG#14298750: slave_master_info not updated
+
+Release 1.0.5 (Released April 06, 2012)
+---------------------------------------
+
+- BUG#13916903: mysqlserverinfo fails when run against offline mysql v5.6
+- WL#6143: Failover Utility for Global Transaction ID - Minor fixes
+
+Release 1.0.5rc1 (Released March 28, 2012)
+------------------------------------------
+
+- BUG#13554556: MySQL Utilities : Refactor option choices
+- BUG#13554750: Warning message in mysqldiff shows wrong server
+- BUG#13576571: Remove unused option in mysqluserclone and mysqldbcopy
+- BUG#13592147: MUT - sorted option always on
+- BUG#13698224: Add clone server from basedir to mysqlserverclone
+- BUG#13721467: Utilities throwing error on exit
+- WL#5987: add replication options to mysqldbcopy, mysqldbexport
+- WL#6143: Failover Utility for Global Transaction ID
+- WL#6152: Replication classes split and code modularized for maintainability
+
+Release 1.0.4 (Released December 22, 2011)
+------------------------------------------
+
+- BUG#12945167: Refactor library to use lists for multi-valued conditions
+- BUG#12988064: Some manual pages not generated by setup.py
+- BUG#13082771: mysqlserverclone - display command to start new server
+- BUG#13082780: mysqldbexport - improve performance of _export_row()
+- BUG#13115052: corrected order of /etc/profile.d/mysql-utilities.sh access
+- BUG#13418634: mysqldbcopy - Crashes when data contains apostrophe
+- WL#5635: Parsers for General and Slow Query Log
+- WL#5977: MySQL Utilities: Add generate SQL to mysqldiff output
+- WL#5978: MySQL Utilities: Add generate SQL to mysqldbcompare
+- WL#5988: MySQL Utilities: Add table locking to mysqldbexport and mysqldbcopy
+
+Release 1.0.3 (Released October 10, 2011)
+----------------------------------------------
+
+- BUG#12757358: mysqldbcopy - duplicate % symbols inserted for SQL statements
+- BUG#12871032: Server.connect_servers forces source and dest to be same type
+- BUG#12885004: mysqldbcopy, mysqldbexport - add --all option
+- BUG#12887948: mysqlreplicate - Remove FLUSH TABLES WITH READ LOCK
+- WL#5958: mysqlrplshow - show replication slaves
+- WL#5983: mysqlreplicate - allow user to specify binary log file and position
+
+Release 1.0.2 (Released August 12, 2011)
+-----------------------------------------
+
+- BUG#11829755/60252: Workbench Utilities do not allow hyphen host names
+- BUG#12614037: LICENSE HAS WRONG FSF ADDRESS
+- BUG#12631924: Parsing non-SQL files can result in wrong engine
+- BUG#12632010: Add feature to allow conversion of storage engines on copy or import
+- WL#5761: mysqlrplcheck - Check prerequisities for replication
+- WL#5762: mysqldbcompare - Compare two databases
+- WL#5935: File Cleanup
+- WL#5937: Remove Multiple Option Parameters
+- WL#5943: Refactor connect mechanism to accept class, dictionary, or string
+- WL#5946: Document Library
+- WL#5947: Refactor Exception Handling
+
+Release 1.0.1 (Released May 11, 2011)
+-------------------------------------
+
+- BUG#11844871: Exception handling needs improvement
+- BUG#11846131: Fix documentation errors for mysqldiff
+- BUG#11854150: Fix typo in mysqldiskusage help
+- BUG#11854512: Changes to diff in Python 2.7
+- BUG#11873948: Enable commit emails for mysql-utilities
+- BUG#59478: Wrong user@host used for remove login
+- BUG#60852: mysqldiskusage does not work
+- WL#5753: mysqlserverinfo - MySQL Server Information
+
+Release 1.0.1dev1 (Released February 17, 2011)
+----------------------------------------------
+
+- BUG#59095: Mysqlserverclone does not print connection information
+- BUG#59096: Mysqluserclone requires double entry of connection information
+- BUG#59265: single column tabular list incorrect
+- BUG#59477: mysqlreplicate fails when the 2 servers have the same port number
+- BUG#60008: MySQL Utilities tests fail under MySQL 5.5
+- BUG#59083: Problems with installing from repository
+- WL#5730: mysqldiskusage - Show disk usage
+- WL#5803: mysqldiff - Database definition difference
+
+Release 1.0.0p1 (Released December 07, 2010)
+--------------------------------------------
+
+- WL#5443: mysqldbcopy - Database Copy
+- WL#5586: mysqldbimport, mysqldbexport - Import and export data
+
+Release 1.0.0 (Released December 07, 2010)
+------------------------------------------
+
+- WL#5442: mysqlreplicate - Replication quick setup
+- WL#5445: mysqlindexcheck - Index check
+- WL#5446: mysqlprocgrep - Find and operate on processes
+- WL#5447: mysqluserclone - Clone user
+- WL#5464: Unit test framework
+- WL#5505: Systems and Acceptance Testing Framework
+- WL#5528: Distribution and Installation Framework
+- WL#5578: mysqlserverclone - Clone server instance
+- WL#5593: mysqlmetagrep - Search database object definitions
+- WL#5615: Documentation Framework

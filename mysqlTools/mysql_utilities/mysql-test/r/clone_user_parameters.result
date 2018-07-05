@@ -1,0 +1,36 @@
+Test case 1 - show the grant statements
+# Source on localhost: ... connected.
+# Dumping grants for user joe_nopass@user
+GRANT USAGE ON *.* TO 'joe_nopass'@'user'
+GRANT ALL PRIVILEGES ON `util_test`.* TO 'joe_nopass'@'user'
+Test case 2 - show the help
+Usage: mysqluserclone.py --source=user:pass@host:port:socket --destination=user:pass@host:port:socket joe@localhost sam:secret1@localhost
+
+mysqluserclone - clone a MySQL user account to one or more new users
+
+Options:
+  --version             show program's version number and exit
+  --help                display a help message and exit
+  --source=SOURCE       connection information for source server in the form:
+                        <user>[:<password>]@<host>[:<port>][:<socket>] or
+                        <login-path>[:<port>][:<socket>].
+  --destination=DESTINATION
+                        connection information for destination server in the
+                        form: <user>[:<password>]@<host>[:<port>][:<socket>]
+                        or <login-path>[:<port>][:<socket>].
+  -d, --dump            dump GRANT statements for user - does not require a
+                        destination
+  --force               drop the new user if it exists
+  --include-global-privileges
+                        include privileges that match base_user@% as well as
+                        base_user@host
+  --list                list all users on the source - does not require a
+                        destination
+  -f FORMAT, --format=FORMAT
+                        display the list of users in either grid (default),
+                        tab, csv, or vertical format - valid only for --list
+                        option
+  -v, --verbose         control how much information is displayed. e.g., -v =
+                        verbose, -vv = more verbose, -vvv = debug
+  -q, --quiet           turn off all messages for quiet execution.
+Test case 3 - use the quiet parameter

@@ -1,0 +1,34 @@
+Test case 1 - show best indexes
+# Source on localhost: ... connected.
+# Checking indexes...
+# Getting indexes for employees.dept_emp
+# The following indexes are duplicates or redundant for table employees.dept_emp:
+#
+CREATE INDEX emp_no ON employees.dept_emp (emp_no) USING BTREE
+#     may be redundant or duplicate of:
+ALTER TABLE employees.dept_emp ADD PRIMARY KEY (emp_no, dept_no)
+#
+# Showing the top best performing indexes from employees.dept_emp:
+#
+database,table,name,column,sequence,num columns,cardinality,est. rows,percent
+employees,dept_emp,emp_no,emp_no,1,1,NNNNNNN,NNNNNNN,NNNNNNN
+employees,dept_emp,dept_no,dept_no,1,1,NNNNNNN,NNNNNNN,NNNNNNN
+#
+# ...done.
+Test case 2 - show worst indexes
+# Source on localhost: ... connected.
+# Checking indexes...
+# Getting indexes for employees.dept_emp
+# The following indexes are duplicates or redundant for table employees.dept_emp:
+#
+CREATE INDEX emp_no ON employees.dept_emp (emp_no) USING BTREE
+#     may be redundant or duplicate of:
+ALTER TABLE employees.dept_emp ADD PRIMARY KEY (emp_no, dept_no)
+#
+# Showing the top worst performing indexes from employees.dept_emp:
+#
+database,table,name,column,sequence,num columns,cardinality,est. rows,percent
+employees,dept_emp,dept_no,dept_no,1,1,NNNNNNN,NNNNNNN,NNNNNNN
+employees,dept_emp,emp_no,emp_no,1,1,NNNNNNN,NNNNNNN,NNNNNNN
+#
+# ...done.

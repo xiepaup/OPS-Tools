@@ -1,0 +1,27 @@
+Test case 1 - no server
+Usage: mysqlserverinfo.py --server=user:pass@host:port:socket --format=grid
+
+mysqlserverinfo.py: error: You must specify at least one server.
+
+Test case 2 - bad server
+ERROR: Server connection values invalid
+
+Test case 3 - bad format
+Usage: mysqlserverinfo.py --server=user:pass@host:port:socket --format=grid
+
+mysqlserverinfo.py: error: option --format: invalid choice: 'ASDASDASD' (choose from 'grid', 'tab', 'csv', 'vertical')
+
+Test case 4 - wrong password
+ERROR: Access denied for user 'root'@'localhost' using password: YES
+
+Test case 5 - no password
+ERROR: Access denied for user 'root'@'localhost' using password: NO
+
+Test case 6 - offline server without start, basedir, datadir option
+ERROR: Server is offline. To connect, you must also provide basedir, datadir and the start option
+
+Test case 7 - offline server without start, datadir option
+ERROR: Server is offline. To connect, you must also provide datadir and the start option
+
+Test case 8 - offline server without start option
+ERROR: Server is offline. To connect, you must also provide start option

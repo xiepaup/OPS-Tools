@@ -1,0 +1,9 @@
+#
+# Use this file to disable tests for non-deterministic or other reasons that keep the
+# test from passing on all platforms.
+# 
+# Include the following information (CSV):
+# suite.test, reason
+# main.example, This is a test (bug#xxxxx)
+#
+main.copy_db_multithreaded, Does not run on all platforms. Need to move to an optional performance suite.

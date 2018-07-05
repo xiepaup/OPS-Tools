@@ -1,0 +1,163 @@
+Test case 1 - error: no destination specified
+Usage: mysqldbcopy.py --source=user:pass@host:port:socket --destination=user:pass@host:port:socket orig_db:new_db
+
+mysqldbcopy.py: error: No destination server specified.
+Test case 2 - error: no database specified
+Usage: mysqldbcopy.py --source=user:pass@host:port:socket --destination=user:pass@host:port:socket orig_db:new_db
+
+mysqldbcopy.py: error: You must specify at least one database to copy or use the --all option to copy all databases.
+Test case 3 - error: cannot parse database list
+Usage: mysqldbcopy.py --source=user:pass@host:port:socket --destination=user:pass@host:port:socket orig_db:new_db
+
+mysqldbcopy.py: error: Cannot parse the specified database(s): '::sad'. Please verify that the database(s) are specified in a valid format (i.e., orig_db[:new_db]) and that backtick quotes are properly used when required.
+Test case 4 - error: old database doesn't exist
+# Source on localhost: ... connected.
+# Destination on localhost: ... connected.
+ERROR: Source database does not exist - NOT_THERE_AT_ALL
+Test case 5 - error: cannot connect to source
+# Source on localhost: ... ERROR: Cannot connect to the Source server.
+Error XXXX: Access denied
+Test case 6 - error: cannot connect to destination
+# Source on localhost: ... connected.
+# Destination on localhost: ... ERROR: Cannot connect to the Destination server.
+Error XXXX: Access denied
+Test case 7 - users with minimal privileges
+# Source on localhost: ... connected.
+# Destination on localhost: ... connected.
+# Copying database util_test renamed as util_db_clone
+# Copying TABLE util_test.t1
+# Copying TABLE util_test.t2
+# Copying TABLE util_test.t3
+# Copying TABLE util_test.t4
+# Copying VIEW util_test.v1
+# Copying PROCEDURE util_test.p1
+# Copying FUNCTION util_test.f1
+# Copying GRANTS from util_test
+# Copying data for TABLE util_test.t1
+# Copying data for TABLE util_test.t2
+# Copying data for TABLE util_test.t3
+# Copying data for TABLE util_test.t4
+# Copying EVENT util_test.e1
+#...done.
+Test case 8 - source user not enough privileges needed
+# Source on localhost: ... connected.
+# Destination on localhost: ... connected.
+ERROR: User sam on the Source server does not have permissions to read all objects in util_test. User needs SELECT privilege on util_test.
+Test case 9 - source user has some privileges needed
+# Source on localhost: ... connected.
+# Destination on localhost: ... connected.
+ERROR: User sam on the Source server does not have permissions to read all objects in util_test. User needs SHOW VIEW privilege on util_test.
+Test case 10 - source user has some privileges needed
+# Source on localhost: ... connected.
+# Destination on localhost: ... connected.
+ERROR: User sam on the Source server does not have permissions to read all objects in util_test. User needs SHOW VIEW privilege on util_test.
+Test case 11 - source user has privileges needed
+# Source on localhost: ... connected.
+# Destination on localhost: ... connected.
+# Copying database util_test renamed as util_db_clone
+# Copying TABLE util_test.t1
+# Copying TABLE util_test.t2
+# Copying TABLE util_test.t3
+# Copying TABLE util_test.t4
+# Copying VIEW util_test.v1
+# Copying PROCEDURE util_test.p1
+# Copying FUNCTION util_test.f1
+# Copying GRANTS from util_test
+# Copying data for TABLE util_test.t1
+# Copying data for TABLE util_test.t2
+# Copying data for TABLE util_test.t3
+# Copying data for TABLE util_test.t4
+# Copying EVENT util_test.e1
+#...done.
+Test case 12 - dest user not enough privileges needed
+# Source on localhost: ... connected.
+# Destination on localhost: ... connected.
+ERROR: User sam on the Destination server does not have permissions to create all objects in util_db_clone. User needs CREATE privilege on util_db_clone.
+Test case 13 - dest user has some privileges needed
+# Source on localhost: ... connected.
+# Destination on localhost: ... connected.
+ERROR: User sam on the Destination server does not have permissions to create all objects in *. User needs SUPER privilege on *.
+Test case 14 - dest user has some privileges needed
+# Source on localhost: ... connected.
+# Destination on localhost: ... connected.
+ERROR: User sam on the Destination server does not have permissions to create all objects in *. User needs SUPER privilege on *.
+Test case 15 - dest user has privileges needed
+# Source on localhost: ... connected.
+# Destination on localhost: ... connected.
+# Copying database util_test renamed as util_db_clone
+# Copying TABLE util_test.t1
+# Copying TABLE util_test.t2
+# Copying TABLE util_test.t3
+# Copying TABLE util_test.t4
+# Copying VIEW util_test.v1
+# Copying PROCEDURE util_test.p1
+# Copying FUNCTION util_test.f1
+# Copying GRANTS from util_test
+# Copying data for TABLE util_test.t1
+# Copying data for TABLE util_test.t2
+# Copying data for TABLE util_test.t3
+# Copying data for TABLE util_test.t4
+# Copying EVENT util_test.e1
+#...done.
+Test case 16 - cannot parse --source
+Usage: mysqldbcopy.py --source=user:pass@host:port:socket --destination=user:pass@host:port:socket orig_db:new_db
+
+mysqldbcopy.py: error: Source connection values invalid
+Test case 17 - cannot parse --destination
+Usage: mysqldbcopy.py --source=user:pass@host:port:socket --destination=user:pass@host:port:socket orig_db:new_db
+
+mysqldbcopy.py: error: Destination connection values invalid
+Test case 18 - no destination specified
+Usage: mysqldbcopy.py --source=user:pass@host:port:socket --destination=user:pass@host:port:socket orig_db:new_db
+
+mysqldbcopy.py: error: No destination server specified.
+Test case 19 - no database specified
+Usage: mysqldbcopy.py --source=user:pass@host:port:socket --destination=user:pass@host:port:socket orig_db:new_db
+
+mysqldbcopy.py: error: You must specify at least one database to copy or use the --all option to copy all databases.
+Test case 20 - new storage engine missing
+# Source on localhost: ... connected.
+# Destination on localhost: ... connected.
+WARNING: New storage engine NOTTHERE is not supported on the server.
+# Copying database util_test renamed as util_db_clone
+# Copying TABLE util_test.t1
+# Copying TABLE util_test.t2
+# Copying TABLE util_test.t3
+# Copying TABLE util_test.t4
+# Copying VIEW util_test.v1
+# Copying PROCEDURE util_test.p1
+# Copying FUNCTION util_test.f1
+# Copying GRANTS from util_test
+# Copying data for TABLE util_test.t1
+# Copying data for TABLE util_test.t2
+# Copying data for TABLE util_test.t3
+# Copying data for TABLE util_test.t4
+# Copying EVENT util_test.e1
+#...done.
+Test case 21 - default storage engine missing
+# Source on localhost: ... connected.
+# Destination on localhost: ... connected.
+WARNING: Default storage engine NOPENOTHERE is not supported on the server.
+# Copying database util_test renamed as util_db_clone
+# Copying TABLE util_test.t1
+# Copying TABLE util_test.t2
+# Copying TABLE util_test.t3
+# Copying TABLE util_test.t4
+# Copying VIEW util_test.v1
+# Copying PROCEDURE util_test.p1
+# Copying FUNCTION util_test.f1
+# Copying GRANTS from util_test
+# Copying data for TABLE util_test.t1
+# Copying data for TABLE util_test.t2
+# Copying data for TABLE util_test.t3
+# Copying data for TABLE util_test.t4
+# Copying EVENT util_test.e1
+#...done.
+Test case 22 - database listed and --all
+Usage: mysqldbcopy.py --source=user:pass@host:port:socket --destination=user:pass@host:port:socket orig_db:new_db
+
+mysqldbcopy.py: error: You cannot use the --all option with a list of databases.
+Test case 23 - error: --rpl-user=root but no --rpl
+Usage: mysqldbcopy.py --source=user:pass@host:port:socket --destination=user:pass@host:port:socket orig_db:new_db
+
+mysqldbcopy.py: error: The --rpl-user option must be used with the --rpl option.

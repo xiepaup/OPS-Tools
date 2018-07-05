@@ -1,0 +1,326 @@
+Test case 1 - Use --help 
+Usage: mysqldiff.py --server1=user:pass@host:port:socket --server2=user:pass@host:port:socket db1.object1:db2.object1 db3:db4
+
+mysqldiff - compare object definitions among objects where the difference is
+how db1.obj1 differs from db2.obj2
+
+Options:
+  --version             show program's version number and exit
+  --help                display a help message and exit
+  --server1=SERVER1     connection information for first server in the form:
+                        <user>[:<password>]@<host>[:<port>][:<socket>] or
+                        <login-path>[:<port>][:<socket>].
+  --server2=SERVER2     connection information for second server in the form:
+                        <user>[:<password>]@<host>[:<port>][:<socket>] or
+                        <login-path>[:<port>][:<socket>].
+  --width=WIDTH         display width
+  --force               do not abort when a diff test fails
+  -v, --verbose         control how much information is displayed. e.g., -v =
+                        verbose, -vv = more verbose, -vvv = debug
+  -q, --quiet           turn off all messages for quiet execution.
+  -d DIFFTYPE, --difftype=DIFFTYPE
+                        display differences in context format in one of the
+                        following formats: [unified|context|differ|sql]
+                        (default: unified).
+  --changes-for=CHANGES_FOR
+                        specify the server to show transformations to match
+                        the other server. For example, to see the
+                        transformation for transforming server1 to match
+                        server2, use --changes-for=server1. Valid values are
+                        'server1' or 'server2'. The default is 'server1'.
+  --show-reverse        produce a transformation report containing the SQL
+                        statements to conform the object definitions specified
+                        in reverse. For example if --changes-for is set to
+                        server1, also generate the transformation for server2.
+                        Note: the reverse changes are annotated and marked as
+                        comments.
+Test case 2 - Use diff  --difftype=unified
+# server1 on localhost: ... connected.
+# server2 on localhost: ... connected.
+# Comparing util_test to util_test                                 [PASS]
+# Comparing util_test.f1 to util_test.f1                           [PASS]
+# Comparing util_test.p1 to util_test.p1                           [PASS]
+# Comparing util_test.t1 to util_test.t1                           [FAIL]
+# Object definitions differ. (--changes-for=server1)
+#
+
+--- util_test.t1
++++ util_test.t1
+@@ -1,3 +1,4 @@
+ CREATE TABLE `t1` (
+-  `a` char(30) DEFAULT NULL
++  `a` char(30) DEFAULT NULL,
++  `b` int(11) DEFAULT NULL
+ ) ENGINE=MEMORY DEFAULT CHARSET=latin1
+Compare failed. One or more differences found.
+Test case 3 - Use diff  --difftype=context
+# server1 on localhost: ... connected.
+# server2 on localhost: ... connected.
+# Comparing util_test to util_test                                 [PASS]
+# Comparing util_test.f1 to util_test.f1                           [PASS]
+# Comparing util_test.p1 to util_test.p1                           [PASS]
+# Comparing util_test.t1 to util_test.t1                           [FAIL]
+# Object definitions differ. (--changes-for=server1)
+#
+
+*** util_test.t1
+--- util_test.t1
+***************
+*** 1,3 ****
+  CREATE TABLE `t1` (
+!   `a` char(30) DEFAULT NULL
+  ) ENGINE=MEMORY DEFAULT CHARSET=latin1
+--- 1,4 ----
+  CREATE TABLE `t1` (
+!   `a` char(30) DEFAULT NULL,
+!   `b` int(11) DEFAULT NULL
+  ) ENGINE=MEMORY DEFAULT CHARSET=latin1
+Compare failed. One or more differences found.
+Test case 4 - Use diff  --difftype=differ
+# server1 on localhost: ... connected.
+# server2 on localhost: ... connected.
+# Comparing util_test to util_test                                 [PASS]
+# Comparing util_test.f1 to util_test.f1                           [PASS]
+# Comparing util_test.p1 to util_test.p1                           [PASS]
+# Comparing util_test.t1 to util_test.t1                           [FAIL]
+# Object definitions differ. (--changes-for=server1)
+#
+
+  CREATE TABLE `t1` (
+-   `a` char(30) DEFAULT NULL
++   `a` char(30) DEFAULT NULL,
+?                            +
++   `b` int(11) DEFAULT NULL
+  ) ENGINE=MEMORY DEFAULT CHARSET=latin1
+Compare failed. One or more differences found.
+Test case 5 - Use --force 
+# server1 on localhost: ... connected.
+# server2 on localhost: ... connected.
+# Comparing util_test to util_test                                 [PASS]
+# Comparing util_test.f1 to util_test.f1                           [PASS]
+# Comparing util_test.p1 to util_test.p1                           [PASS]
+# Comparing util_test.t1 to util_test.t1                           [FAIL]
+# Object definitions differ. (--changes-for=server1)
+#
+
+--- util_test.t1
++++ util_test.t1
+@@ -1,3 +1,4 @@
+ CREATE TABLE `t1` (
+-  `a` char(30) DEFAULT NULL
++  `a` char(30) DEFAULT NULL,
++  `b` int(11) DEFAULT NULL
+ ) ENGINE=MEMORY DEFAULT CHARSET=latin1
+# Comparing util_test.t2 to util_test.t2                           [FAIL]
+# Object definitions differ. (--changes-for=server1)
+#
+
+--- util_test.t2
++++ util_test.t2
+@@ -1,3 +1,3 @@
+ CREATE TABLE `t2` (
+   `a` char(30) DEFAULT NULL
+-) ENGINE=MyISAM DEFAULT CHARSET=latin1
++) ENGINE=MEMORY DEFAULT CHARSET=latin1
+# Comparing util_test.t3 to util_test.t3                           [PASS]
+# Comparing util_test.t4 to util_test.t4                           [PASS]
+# Comparing util_test.trg to util_test.trg                         [PASS]
+# Comparing util_test.v1 to util_test.v1                           [PASS]
+Compare failed. One or more differences found.
+Test case 6 - Use --quiet 
+Test case 7 - Use --width=65 
+# server1 on localhost: ... connected.
+# server2 on localhost: ... connected.
+# Comparing util_test to util_test                       [PASS]
+# Comparing util_test.f1 to util_test.f1                 [PASS]
+# Comparing util_test.p1 to util_test.p1                 [PASS]
+# Comparing util_test.t1 to util_test.t1                 [FAIL]
+# Object definitions differ. (--changes-for=server1)
+#
+
+--- util_test.t1
++++ util_test.t1
+@@ -1,3 +1,4 @@
+ CREATE TABLE `t1` (
+-  `a` char(30) DEFAULT NULL
++  `a` char(30) DEFAULT NULL,
++  `b` int(11) DEFAULT NULL
+ ) ENGINE=MEMORY DEFAULT CHARSET=latin1
+Compare failed. One or more differences found.
+Test case 8 - Use --width=55 
+# server1 on localhost: ... connected.
+# server2 on localhost: ... connected.
+# Comparing util_test to util_test             [PASS]
+# Comparing util_test.f1 to util_test.f1       [PASS]
+# Comparing util_test.p1 to util_test.p1       [PASS]
+# Comparing util_test.t1 to util_test.t1       [FAIL]
+# Object definitions differ. (--changes-for=server1)
+#
+
+--- util_test.t1
++++ util_test.t1
+@@ -1,3 +1,4 @@
+ CREATE TABLE `t1` (
+-  `a` char(30) DEFAULT NULL
++  `a` char(30) DEFAULT NULL,
++  `b` int(11) DEFAULT NULL
+ ) ENGINE=MEMORY DEFAULT CHARSET=latin1
+Compare failed. One or more differences found.
+Test case 9 - Use -vvv 
+# server1 on localhost: ... connected.
+# server2 on localhost: ... connected.
+
+# Definition for object util_test:
+CREATE DATABASE `util_test` /*!40100 DEFAULT CHARACTER SET latin1 */
+
+# Definition for object util_test:
+CREATE DATABASE `util_test` /*!40100 DEFAULT CHARACTER SET latin1 */
+# Comparing util_test to util_test                                 [PASS]
+
+# Definition for object util_test.f1:
+CREATE DEFINER=`root`@`localhost` FUNCTION `f1`() RETURNS int(11)
+    DETERMINISTIC
+RETURN (SELECT 1)
+
+# Definition for object util_test.f1:
+CREATE DEFINER=`root`@`localhost` FUNCTION `f1`() RETURNS int(11)
+    DETERMINISTIC
+RETURN (SELECT 1)
+# Comparing util_test.f1 to util_test.f1                           [PASS]
+
+# Definition for object util_test.p1:
+CREATE DEFINER=`root`@`localhost` PROCEDURE `p1`(p1 CHAR(20))
+INSERT INTO util_test.t1 VALUES ("50")
+
+# Definition for object util_test.p1:
+CREATE DEFINER=`root`@`localhost` PROCEDURE `p1`(p1 CHAR(20))
+INSERT INTO util_test.t1 VALUES ("50")
+# Comparing util_test.p1 to util_test.p1                           [PASS]
+
+# Definition for object util_test.t1:
+CREATE TABLE `t1` (
+  `a` char(30) DEFAULT NULL
+) ENGINE=MEMORY DEFAULT CHARSET=latin1
+
+# Definition for object util_test.t1:
+CREATE TABLE `t1` (
+  `a` char(30) DEFAULT NULL,
+  `b` int(11) DEFAULT NULL
+) ENGINE=MEMORY DEFAULT CHARSET=latin1
+# Comparing util_test.t1 to util_test.t1                           [FAIL]
+# Object definitions differ. (--changes-for=server1)
+#
+
+--- util_test.t1
++++ util_test.t1
+@@ -1,3 +1,4 @@
+ CREATE TABLE `t1` (
+-  `a` char(30) DEFAULT NULL
++  `a` char(30) DEFAULT NULL,
++  `b` int(11) DEFAULT NULL
+ ) ENGINE=MEMORY DEFAULT CHARSET=latin1
+Compare failed. One or more differences found.
+Test case 10 - Use --changes-for=server1  
+# server1 on localhost: ... connected.
+# server2 on localhost: ... connected.
+# Comparing util_test to util_test                                 [PASS]
+# Comparing util_test.f1 to util_test.f1                           [PASS]
+# Comparing util_test.p1 to util_test.p1                           [PASS]
+# Comparing util_test.t1 to util_test.t1                           [FAIL]
+# Object definitions differ. (--changes-for=server1)
+#
+
+--- util_test.t1
++++ util_test.t1
+@@ -1,3 +1,4 @@
+ CREATE TABLE `t1` (
+-  `a` char(30) DEFAULT NULL
++  `a` char(30) DEFAULT NULL,
++  `b` int(11) DEFAULT NULL
+ ) ENGINE=MEMORY DEFAULT CHARSET=latin1
+Compare failed. One or more differences found.
+Test case 11 - Use --changes-for=server1 --show-reverse 
+# server1 on localhost: ... connected.
+# server2 on localhost: ... connected.
+# Comparing util_test to util_test                                 [PASS]
+# Comparing util_test.f1 to util_test.f1                           [PASS]
+# Comparing util_test.p1 to util_test.p1                           [PASS]
+# Comparing util_test.t1 to util_test.t1                           [FAIL]
+# Object definitions differ. (--changes-for=server1)
+#
+
+--- util_test.t1
++++ util_test.t1
+@@ -1,3 +1,4 @@
+ CREATE TABLE `t1` (
+-  `a` char(30) DEFAULT NULL
++  `a` char(30) DEFAULT NULL,
++  `b` int(11) DEFAULT NULL
+ ) ENGINE=MEMORY DEFAULT CHARSET=latin1
+
+#
+# Definition diff for reverse changes (--changes-for=server2):
+#
+# --- util_test.t1
+# +++ util_test.t1
+# @@ -1,4 +1,3 @@
+#  CREATE TABLE `t1` (
+# -  `a` char(30) DEFAULT NULL,
+# -  `b` int(11) DEFAULT NULL
+# +  `a` char(30) DEFAULT NULL
+#  ) ENGINE=MEMORY DEFAULT CHARSET=latin1
+#
+
+Compare failed. One or more differences found.
+Test case 12 - Use --changes-for=server2  
+# server1 on localhost: ... connected.
+# server2 on localhost: ... connected.
+# Comparing util_test to util_test                                 [PASS]
+# Comparing util_test.f1 to util_test.f1                           [PASS]
+# Comparing util_test.p1 to util_test.p1                           [PASS]
+# Comparing util_test.t1 to util_test.t1                           [FAIL]
+# Object definitions differ. (--changes-for=server2)
+#
+
+--- util_test.t1
++++ util_test.t1
+@@ -1,4 +1,3 @@
+ CREATE TABLE `t1` (
+-  `a` char(30) DEFAULT NULL,
+-  `b` int(11) DEFAULT NULL
++  `a` char(30) DEFAULT NULL
+ ) ENGINE=MEMORY DEFAULT CHARSET=latin1
+Compare failed. One or more differences found.
+Test case 13 - Use --changes-for=server2 --show-reverse 
+# server1 on localhost: ... connected.
+# server2 on localhost: ... connected.
+# Comparing util_test to util_test                                 [PASS]
+# Comparing util_test.f1 to util_test.f1                           [PASS]
+# Comparing util_test.p1 to util_test.p1                           [PASS]
+# Comparing util_test.t1 to util_test.t1                           [FAIL]
+# Object definitions differ. (--changes-for=server2)
+#
+
+--- util_test.t1
++++ util_test.t1
+@@ -1,4 +1,3 @@
+ CREATE TABLE `t1` (
+-  `a` char(30) DEFAULT NULL,
+-  `b` int(11) DEFAULT NULL
++  `a` char(30) DEFAULT NULL
+ ) ENGINE=MEMORY DEFAULT CHARSET=latin1
+
+#
+# Definition diff for reverse changes (--changes-for=server1):
+#
+# --- util_test.t1
+# +++ util_test.t1
+# @@ -1,3 +1,4 @@
+#  CREATE TABLE `t1` (
+# -  `a` char(30) DEFAULT NULL
+# +  `a` char(30) DEFAULT NULL,
+# +  `b` int(11) DEFAULT NULL
+#  ) ENGINE=MEMORY DEFAULT CHARSET=latin1
+#
+
+Compare failed. One or more differences found.

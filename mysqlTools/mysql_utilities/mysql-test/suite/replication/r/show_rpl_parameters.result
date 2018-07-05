@@ -1,0 +1,141 @@
+Test case 1 - show topology - without list
+# master on localhost: ... connected.
+# Finding slaves for master: localhost:PORT2
+# master on localhost: ... connected.
+# Finding slaves for master: localhost:PORT1
+
+# Replication Topology Graph
+localhost:PORT2 (MASTER)
+   |
+   +--- localhost:PORT1 - (SLAVE)
+
+Test case 2 - show topology - with list
+# master on localhost: ... connected.
+# Finding slaves for master: localhost:PORT2
+# master on localhost: ... connected.
+# Finding slaves for master: localhost:PORT1
+
+# Replication Topology Graph
+localhost:PORT2 (MASTER)
+   |
+   +--- localhost:PORT1 - (SLAVE)
+
++-----------------+-----------------+
+| Master          | Slave           |
++-----------------+-----------------+
+| localhost:PORT2  | localhost:PORT1  |
++-----------------+-----------------+
+Test case 3 - show topology - with list and quiet
+localhost:PORT2 (MASTER)
+   |
+   +--- localhost:PORT1 - (SLAVE)
+
++-----------------+-----------------+
+| Master          | Slave           |
++-----------------+-----------------+
+| localhost:PORT2  | localhost:PORT1  |
++-----------------+-----------------+
+Test case 4 - show topology - with format and without list
+# master on localhost: ... connected.
+# Finding slaves for master: localhost:PORT2
+# master on localhost: ... connected.
+# Finding slaves for master: localhost:PORT1
+
+# Replication Topology Graph
+localhost:PORT2 (MASTER)
+   |
+   +--- localhost:PORT1 - (SLAVE)
+
+Test case 5 - show topology - help
+Usage: mysqlrplshow.py --master=root@localhost:3306 
+
+mysqlrplshow - show slaves attached to a master
+
+Options:
+  --version             show program's version number and exit
+  --help                display a help message and exit
+  --master=MASTER       connection information for master server in the form:
+                        <user>[:<password>]@<host>[:<port>][:<socket>] or
+                        <login-path>[:<port>][:<socket>].
+  -l, --show-list       print a list of the topology.
+  -f FORMAT, --format=FORMAT
+                        display the list in either grid (default), tab, csv,
+                        or vertical format
+  -r, --recurse         traverse the list of slaves to find additional
+                        master/slave connections. User this option to map a
+                        replication topology.
+  --max-depth=MAX_DEPTH
+                        limit the traversal to this depth. Valid only with the
+                        --recurse option. Valid values are non-negative
+                        integers.
+  -p, --prompt          prompt for slave user and password if different from
+                        master login.
+  -n NUM_RETRIES, --num-retries=NUM_RETRIES
+                        number of retries allowed for failed slave login
+                        attempt. Valid with --prompt only.
+  -q, --quiet           turn off all messages for quiet execution.
+  --discover-slaves-login=DISCOVER
+                        at startup, query master for all registered slaves and
+                        use the user name and password specified to connect.
+                        Supply the user and password in the form
+                        <user>[:<password>] or <login-path>. For example,
+                        --discover-slaves-login=joe:secret will use 'joe' as
+                        the user and 'secret' as the password for each
+                        discovered slave.
+Test Case 6 : Testing show topology with CSV format 
+# master on localhost: ... connected.
+# Finding slaves for master: localhost:PORT2
+# master on localhost: ... connected.
+# Finding slaves for master: localhost:PORT1
+
+# Replication Topology Graph
+localhost:PORT2 (MASTER)
+   |
+   +--- localhost:PORT1 - (SLAVE)
+
+Master,Slave
+localhost:PORT2,localhost:PORT1
+Test Case 7 : Testing show topology with TAB format 
+# master on localhost: ... connected.
+# Finding slaves for master: localhost:PORT2
+# master on localhost: ... connected.
+# Finding slaves for master: localhost:PORT1
+
+# Replication Topology Graph
+localhost:PORT2 (MASTER)
+   |
+   +--- localhost:PORT1 - (SLAVE)
+
+Master	Slave
+localhost:PORT2	localhost:PORT1
+Test Case 8 : Testing show topology with GRID format 
+# master on localhost: ... connected.
+# Finding slaves for master: localhost:PORT2
+# master on localhost: ... connected.
+# Finding slaves for master: localhost:PORT1
+
+# Replication Topology Graph
+localhost:PORT2 (MASTER)
+   |
+   +--- localhost:PORT1 - (SLAVE)
+
++-----------------+-----------------+
+| Master          | Slave           |
++-----------------+-----------------+
+| localhost:PORT2  | localhost:PORT1  |
++-----------------+-----------------+
+Test Case 9 : Testing show topology with VERTICAL format 
+# master on localhost: ... connected.
+# Finding slaves for master: localhost:PORT2
+# master on localhost: ... connected.
+# Finding slaves for master: localhost:PORT1
+
+# Replication Topology Graph
+localhost:PORT2 (MASTER)
+   |
+   +--- localhost:PORT1 - (SLAVE)
+
+*************************       1. row *************************
+ Master: localhost:PORT2
+  Slave: localhost:PORT1
+1 rows.
