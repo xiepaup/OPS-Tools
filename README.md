@@ -43,7 +43,10 @@ About-MySQL/Linux/Oracle Tools
 
 ----- 解析查询日志，获取SELECT、DELETE、UPDATE、INSERT 语句执行情况(opensource by xiepaup)
 
-    此工具目前简单粗暴： 使用目的： 1.能够获得一段时间内表上执行 SELECT、DELETE、UPDATE、INSERT 次数，以及DB使用情况 2.标红执行占比大于40% 的表，直观反应不合理请求。 3.能够反应整个业务是否分配均匀，是否存在不合理业务在刷DB
+此工具目前简单粗暴： 使用目的： 
+	     1.能够获得一段时间内表上执行 SELECT、DELETE、UPDATE、INSERT 次数，以及DB使用情况 
+		  2.标红执行占比大于40% 的表，直观反应不合理请求。 
+		  3.能够反应整个业务是否分配均匀，是否存在不合理业务在刷DB
 ```
 使用方法如下：
 
@@ -51,6 +54,7 @@ Usage : python xa-general-statistic.py general.log 10:10:10
 -- 参数解释:
 -- general.log : 需要解析的general log 日志文件
 -- 10:10:10    : 文件结束时间（这个时间目前没有记录再文件里，只能手动输入囖）
+
 使用效果如下： 
 [root@xxxxx-000 xa]# python scripts/xa-general-statistic.py general-log-2016-08-08.log 17:59:12 
 ----------------------------------------------------------------- 
@@ -98,14 +102,14 @@ INSERT total Executed : 18281
 
 #### 1.redis_key_distribution.py 
 
--- 统计redis key类型数据大小分布 
--- 原理：使用redis命令： scan、pipline、type 和 debug object 来得到 redis key 信息
+#####统计redis key类型数据大小分布 
+
+	原理：使用redis命令： scan、pipline、type 和 debug object 来得到 redis key 信息
 
 ```
 统计时间:[Fri Jul 29 17:06:29 2016 ~ Fri Jul 29 17:06:29 2016] 
 Redis服务器[127.0.0.1:6388] 
 数据类型和数据大小分布情况如下:
-
 
 |KEY TYPE | KEY COUNT | KEY 64(byte) | KEY 128 | Key 512 | Key 1024 | Key 2048 | Key 3072 | Key 4096 | Key 5120 | Key 6044 | Key large | 
 | String | 2 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 
@@ -145,7 +149,7 @@ Biggest zset Key Top 2 found 'xxxG_UnifiedAuth_iApiId_6_20170619' has 79568 memb
 Biggest zset Key Top 3 found 'xxxG_video_UserSubscribe_18_Sort' has 53192 members
 
 comment: you can compile on redis source 3.2 code ~
-``
+```
 
 
 ---------------------------------------------------
