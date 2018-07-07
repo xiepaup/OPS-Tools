@@ -1,7 +1,4 @@
 
-About-MySQL/Linux/Oracle Tools
-
-
 ### MySQLTOOLS:
 
 ```
