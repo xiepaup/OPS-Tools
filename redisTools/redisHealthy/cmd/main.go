@@ -1,76 +1,79 @@
 package main
 
-import "xiepaup.com/dbatools/redisTools/redisHealthy/lib/db"
-
 import (
+	"flag"
 	"fmt"
 	"os"
-	"strings"
+	"os/signal"
 	"time"
 )
 
-const MAX_QUEUE_LEN = 1000
+/**
+ *
+ * Author  :  xiean
+ * EMail   :  xiepaup@163.com 
+ * Date    :  2018-08-03
+ * Project :  dbatools
+ **/
+
+const MAX_QUEUE_LEN = 100
+
+var (
+	RunSeconds      int
+	DelayRunSeconds int
+	Addr            string
+	Paswd           string
+
+	monitorChan   chan interface{}
+	stopChan      chan struct{}
+	terminateChan chan struct{}
+)
+
+func init() {
+
+	stopChan = make(chan struct{}, 0)
+	monitorChan = make(chan interface{}, MAX_QUEUE_LEN)
+	terminateChan = make(chan struct{}, 0)
+
+	flag.IntVar(&RunSeconds, "runsec", 60, "how long will be monitor")
+	flag.IntVar(&DelayRunSeconds, "delaysec", 0, "if not 0, monitor will run N seconds later ")
+	flag.StringVar(&Addr, "addr", "127.0.0.1:6379", "redis listen address")
+	flag.StringVar(&Paswd, "password", "", "redis auth ,usually will be requirepass config item")
+	flag.Parse()
+}
+
+func terminalProgram(terminalChan chan struct{}) {
+	c := make(chan os.Signal, 0)
+	signal.Notify(c)
+
+	<-c
+
+	terminalChan <- struct{}{}
+}
 
 func main() {
-	stopChan := make(chan struct{}, 2)
-	monitorChan := make(chan interface{}, MAX_QUEUE_LEN)
-	r := db.NewRedis("127.0.0.1:31238", "redis@manage")
 
-	redisBasicInfo(r)
+	terminalProgram(terminateChan)
 
-	err := r.Monitor(monitorChan, stopChan)
-	if err != nil {
-		os.Exit(1)
-	}
-	go consumeCmds(monitorChan, stopChan)
-	fmt.Println(fmt.Sprintf("do sleep ... wait queue done"))
+	mainLoop()
 
-	time.Sleep(time.Second * 1000)
 }
 
-func redisBasicInfo(r *db.RedisContext) {
-	i, err := r.Info()
-	if err != nil {
-		fmt.Println(fmt.Sprintf("got an error from redis , %+v", err))
-		os.Exit(2)
-	}
-	info := strings.Split(string(i), "\r\n")
-	if len(info) <= 0 {
-		return
-	}
 
-	infoInfo := make(map[string]interface{}, 0)
 
-	for _, l := range info {
-		if !strings.Contains(l, ":") || strings.HasPrefix(l, "#") || len(l) == 0 {
-			continue
-		}
-		//#redis_version:2.8.17-t-v0.2
-		kv := strings.Split(l, ":")
-		infoInfo[kv[0]] = kv[1]
-	}
+func mainLoop() {
+	for {
+		fmt.Println("todo Main Loop ..")
 
-	//fmt.Println(infoInfo)
-	showBasicInfo(infoInfo)
-}
+		select {
+		case <-terminateChan:
+			break
+		case <-stopChan:
+			//TODO  --> send stop chan to monitor , and consumer
+		default:
+			//TODO  ---> run programs .. and sleep some time
+			time.Sleep(time.Microsecond * 10)
 
-func showBasicInfo(info map[string]interface{}) {
-	fmt.Println(fmt.Sprintf(`
--------------------------------------------------
-|version:%-40s|osversion:%-40s|
-|uptime:%10s|clients:%5s|role:%6s|cur_qps:%6s|used_memory:%8s|rss_memory:%8s|
--------------------------------------------------`,
-		info["redis_version"], info["os"],
-		info["uptime_in_seconds"], info["connected_clients"], info["role"],
-		info["instantaneous_ops_per_sec"],
-		info["used_memory_human"], info["used_memory_peak_human"]))
-}
-
-func consumeCmds(mchan chan interface{}, schan chan struct{}) {
-	for line := range mchan {
-		//#1532945695.049181 [0 10.51.149.210:34992] "RPOP" "com.xiepaup.tendis.source.queue"
-		if v, ok := line.(string); ok {
-			fmt.Println(fmt.Sprintf("outer lib do parse cmd : %s", v))
 		}
 	}
 }
