@@ -1,13 +1,29 @@
-TODO FUNC:
+# TODO FUNC:
 
 
-Requirement:
+## Requirement:
    1. can control 
-      -- start at anytime
-      -- stop  at anytime 
+      -- 可以指定延迟启动时间，即多久以后启动
+      -- 可以指定运行时长，即什么时候结束
+      -- 监控 redis 内存增量情况，如果在运行monitor过程中发现redis内存暴涨，那么结束本次运行
+      -- 监控 redis 负载 QPS ，超过一定阈值 ，结束本次运行？ （感觉使用内存监控比较好）
+    2. 关注宏观层面
+       -- 流量分析
+           -- 总体概况， 写入流量(去掉查询流量)； 读取流量（去slave查询？value值？）
+
+       -- 请求类型分析
+           -- 总体概况， 读写比例
+           -- 各种类型KEY操作占比
+       -- 请求类型 业务类型分析？ （通过分隔符智能判断？）
+    3. 注意细节处理
+       -- 特别注意 Append 指令
+       -- 特别注意 value 超过 1k 的请求
+       -- 特别注意 mget、hmget 这种 mutil 请求 数量超过 【 30 】个（放大30倍）？
+       -- 特别注意 hgetall、lrange 0 N 、zrangebyscore 等 获取全部数据的key
+       -- 如果hgetall 返回数据只是单个field ，这样存在优化空间， 建议转化成string类型存储
 
 
-1. 流量分析
-   -- 整体出入流量
-   -- 流量类型分布 | HASH;LIST;STRING:SET;ZSET
-   -- 
+## Implement：
+
+    1. 1:N 生产消费模式
+    2. 3层 控制， 控制层，逻辑层，存储层
