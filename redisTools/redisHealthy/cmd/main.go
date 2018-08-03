@@ -68,7 +68,7 @@ func showBasicInfo(info map[string]interface{}) {
 
 func consumeCmds(mchan chan interface{}, schan chan struct{}) {
 	for line := range mchan {
-		//#1532945695.049181 [0 10.51.149.210:34992] "RPOP" "com.tencent.tendis.source.queue"
+		//#1532945695.049181 [0 10.51.149.210:34992] "RPOP" "com.xiepaup.tendis.source.queue"
 		if v, ok := line.(string); ok {
 			fmt.Println(fmt.Sprintf("outer lib do parse cmd : %s", v))
 		}
