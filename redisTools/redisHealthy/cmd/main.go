@@ -56,6 +56,10 @@ func main() {
 
 	terminalProgram(terminateChan)
 
+	//go time  ctl
+	//go redis ctl
+	//
+
 	mainLoop()
 
 }
@@ -76,5 +80,7 @@ func mainLoop() {
 			time.Sleep(time.Microsecond * 10)
 
 		}
+
+		time.Sleep(time.Millisecond * 10)
 	}
 }
