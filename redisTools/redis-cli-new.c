@@ -2259,9 +2259,13 @@ static void findBigKeys(int bigkeys_num) {
     /* Free sds strings containing max keys */
     for(i=0;i<TYPE_NONE;i++) {
         for (int j=0;j<bigkeys[i]->size;j++){
-            if(bigkeys[i]) sdsfree(bigkeys[i]->keyName[j]);
-            if(bigkeys[i]) zfree(bigkeys[i]);
+            if(bigkeys[i]->keyName[j]){
+		    sdsfree(bigkeys[i]->keyName[j]);
+	      }
         }
+	if (bigkeys[i]){
+	    zfree(bigkeys[i]);
+	}
     }
     
     /* Success! */
