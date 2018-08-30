@@ -2137,6 +2137,7 @@ static void findBigKeys(int bigkeys_num) {
     /* Status message */
     printf("\n# Scanning the entire keyspace to find biggest keys as well as\n");
     printf("# average sizes per key type.  You can use -i 0.1 to sleep 0.1 sec\n");
+    printf("# Curent DB has %llu keys \n",total_keys);
     printf("# per 100 SCAN commands (not usually needed).\n\n");
     
     /* SCAN loop */
@@ -2225,7 +2226,9 @@ static void findBigKeys(int bigkeys_num) {
         
         if (reply) freeReplyObject(reply);
     } while(it != 0);
-    
+
+    printf("[100.00%%] Sampled %llu keys done\n",  total_keys);
+
     if(types) zfree(types);
     if(sizes) zfree(sizes);
     
@@ -2245,9 +2248,9 @@ static void findBigKeys(int bigkeys_num) {
         }
     }
     
-    
+    printf("\n-------- key distribution -------\n\n");
     for(i=0;i<TYPE_NONE;i++) {
-        printf("%llu %ss with %llu %s (%05.2f%% of keys, avg size %.2f)\n",
+        printf("Found %llu %ss with %llu %s (%05.2f%% of keys, avg size %.2f)\n",
                counts[i], typename[i], totalsize[i], typeunit[i],
                sampled ? 100 * (double)counts[i]/sampled : 0,
                counts[i] ? (double)totalsize[i]/counts[i] : 0);
@@ -2256,12 +2259,13 @@ static void findBigKeys(int bigkeys_num) {
     /* Free sds strings containing max keys */
     for(i=0;i<TYPE_NONE;i++) {
         for (int j=0;j<bigkeys[i]->size;j++){
-            sdsfree(bigkeys[i]->keyName[j]);
-            zfree(bigkeys[i]);
+            if(bigkeys[i]) sdsfree(bigkeys[i]->keyName[j]);
+            if(bigkeys[i]) zfree(bigkeys[i]);
         }
     }
     
     /* Success! */
+	
     exit(0);
 }
 
