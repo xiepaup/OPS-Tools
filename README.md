@@ -196,3 +196,9 @@ comment: you can compile on redis source 3.2 code ~
 
 
 Twemproxy 命令支持列表： https://raw.githubusercontent.com/twitter/twemproxy/master/notes/redis.md
+
+性能测试工具：
+1、cpu 和内存测试工具用geekbench
+2、网络使用netperf测试
+3、redis 使用 redis-benchmark
+4、mysql 使用 sysbench
