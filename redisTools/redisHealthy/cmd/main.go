@@ -25,16 +25,16 @@ var (
 	Addr            string
 	Paswd           string
 
-	monitorChan   chan interface{}
-	stopChan      chan struct{}
-	terminateChan chan struct{}
+	monitorChan chan interface{}
+	stopChan    chan struct{}
+	doneChan    chan struct{}
 )
 
 func init() {
 
 	stopChan = make(chan struct{}, 0)
 	monitorChan = make(chan interface{}, MAX_QUEUE_LEN)
-	terminateChan = make(chan struct{}, 0)
+	doneChan = make(chan struct{}, 0)
 
 	flag.IntVar(&RunSeconds, "runsec", 60, "how long will be monitor")
 	flag.IntVar(&DelayRunSeconds, "delaysec", 0, "if not 0, monitor will run N seconds later ")
@@ -54,7 +54,7 @@ func terminalProgram(terminalChan chan struct{}) {
 
 func main() {
 
-	terminalProgram(terminateChan)
+	terminalProgram(doneChan)
 
 	//go time  ctl
 	//go redis ctl
@@ -71,7 +71,7 @@ func mainLoop() {
 		fmt.Println("todo Main Loop ..")
 
 		select {
-		case <-terminateChan:
+		case <-doneChan:
 			break
 		case <-stopChan:
 			//TODO  --> send stop chan to monitor , and consumer
