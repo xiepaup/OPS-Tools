@@ -186,7 +186,8 @@ def parse_args(sys_argvs):
              usage()
    except Exception,e:
         print "Parse Args Error ,%s" % (e)
-   return {'passwd':passwd,'host':host,'port':port,'outputdir':outputdir}
+   ##//return {'passwd':passwd,'host':host,'port':port,'outputdir':outputdir}
+   return {'passwd':passwd,'host':host,'port':port}
 
 
 
