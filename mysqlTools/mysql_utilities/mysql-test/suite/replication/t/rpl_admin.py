@@ -74,86 +74,86 @@ class test(mutlib.System_test):
         
         # Spawn servers
         self.server0 = self.servers.get_server(0)
-        self.server1 = self.spawn_server("rep_master")
-        self.server2 = self.spawn_server("rep_slave1")
-        self.server3 = self.spawn_server("rep_slave2")
-        self.server4 = self.spawn_server("rep_slave3")
+        self.server1 = self.spawn_server("rep_main")
+        self.server2 = self.spawn_server("rep_subordinate1")
+        self.server3 = self.spawn_server("rep_subordinate2")
+        self.server4 = self.spawn_server("rep_subordinate3")
 
         self.m_port = self.server1.port
         self.s1_port = self.server2.port
         self.s2_port = self.server3.port
         self.s3_port = self.server4.port
         
-        for slave in [self.server2, self.server3, self.server4]:
-            slave.exec_query("GRANT REPLICATION SLAVE ON *.* TO "
+        for subordinate in [self.server2, self.server3, self.server4]:
+            subordinate.exec_query("GRANT REPLICATION SLAVE ON *.* TO "
                               "'rpl'@'localhost' IDENTIFIED BY 'rpl'")
 
-        # Form replication topology - 1 master, 3 slaves
+        # Form replication topology - 1 main, 3 subordinates
         return self.reset_topology()
 
     def run(self):
         
-        cmd_str = "mysqlrpladmin.py %s " % self.master_str
+        cmd_str = "mysqlrpladmin.py %s " % self.main_str
         
-        master_conn = self.build_connection_string(self.server1).strip(' ')
-        slave1_conn = self.build_connection_string(self.server2).strip(' ')
-        slave2_conn = self.build_connection_string(self.server3).strip(' ')
-        slave3_conn = self.build_connection_string(self.server4).strip(' ')
+        main_conn = self.build_connection_string(self.server1).strip(' ')
+        subordinate1_conn = self.build_connection_string(self.server2).strip(' ')
+        subordinate2_conn = self.build_connection_string(self.server3).strip(' ')
+        subordinate3_conn = self.build_connection_string(self.server4).strip(' ')
         
-        slaves_str = ",".join([slave1_conn, slave2_conn, slave3_conn])
+        subordinates_str = ",".join([subordinate1_conn, subordinate2_conn, subordinate3_conn])
         
         comment = "Test case 1 - show health before switchover"
-        cmd_opts = " --slaves=%s --format=vertical health" % slaves_str
+        cmd_opts = " --subordinates=%s --format=vertical health" % subordinates_str
         res = mutlib.System_test.run_test_case(self, 0, cmd_str+cmd_opts,
                                                comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
             
         # Build connection string with loopback address instead of localhost
-        slave_ports = [self.server2.port, self.server3.port, self.server4.port]
-        slaves_loopback = "root:root@127.0.0.1:%s," % self.server2.port
-        slaves_loopback += "root:root@127.0.0.1:%s," % self.server3.port
-        slaves_loopback += "root:root@127.0.0.1:%s" % self.server4.port
-        slave3_conn_ip = slave3_conn.replace("localhost", "127.0.0.1")
+        subordinate_ports = [self.server2.port, self.server3.port, self.server4.port]
+        subordinates_loopback = "root:root@127.0.0.1:%s," % self.server2.port
+        subordinates_loopback += "root:root@127.0.0.1:%s," % self.server3.port
+        subordinates_loopback += "root:root@127.0.0.1:%s" % self.server4.port
+        subordinate3_conn_ip = subordinate3_conn.replace("localhost", "127.0.0.1")
 
-        # Perform switchover from original master to all other slaves and back.
+        # Perform switchover from original main to all other subordinates and back.
         test_cases = [
-            # (master, [slaves_before], candidate, new_master, [slaves_after])
-            (master_conn, [slave1_conn, slave2_conn, slave3_conn],
-             slave1_conn, "slave1", [slave2_conn, slave3_conn, master_conn]),
-            (slave1_conn, [slave2_conn, slave3_conn, master_conn],
-             slave2_conn, "slave2", [slave1_conn, slave3_conn, master_conn]),
-            (slave2_conn, [slave1_conn, slave3_conn, master_conn],
-             slave3_conn, "slave3", [slave2_conn, slave1_conn, master_conn]),
-            (slave3_conn_ip, ["root:root@127.0.0.1:%s" % self.server3.port,
-                           slave1_conn, master_conn],
-             master_conn, "master", [slave1_conn, slave2_conn, slave3_conn]),
+            # (main, [subordinates_before], candidate, new_main, [subordinates_after])
+            (main_conn, [subordinate1_conn, subordinate2_conn, subordinate3_conn],
+             subordinate1_conn, "subordinate1", [subordinate2_conn, subordinate3_conn, main_conn]),
+            (subordinate1_conn, [subordinate2_conn, subordinate3_conn, main_conn],
+             subordinate2_conn, "subordinate2", [subordinate1_conn, subordinate3_conn, main_conn]),
+            (subordinate2_conn, [subordinate1_conn, subordinate3_conn, main_conn],
+             subordinate3_conn, "subordinate3", [subordinate2_conn, subordinate1_conn, main_conn]),
+            (subordinate3_conn_ip, ["root:root@127.0.0.1:%s" % self.server3.port,
+                           subordinate1_conn, main_conn],
+             main_conn, "main", [subordinate1_conn, subordinate2_conn, subordinate3_conn]),
         ]
         test_num = 2
         for case in test_cases:
-            slaves_str = ",".join(case[1])
+            subordinates_str = ",".join(case[1])
             comment = "Test case %s - switchover to %s" % (test_num, case[3])
-            cmd_str = "mysqlrpladmin.py --master=%s --rpl-user=rpl:rpl " % case[0]
-            cmd_opts = " --new-master=%s --demote-master " % case[2]
-            cmd_opts += " --slaves=%s switchover" % slaves_str
+            cmd_str = "mysqlrpladmin.py --main=%s --rpl-user=rpl:rpl " % case[0]
+            cmd_opts = " --new-main=%s --demote-main " % case[2]
+            cmd_opts += " --subordinates=%s switchover" % subordinates_str
             res = mutlib.System_test.run_test_case(self, 0, cmd_str+cmd_opts,
                                                    comment)
             if not res:
                 raise MUTLibError("%s: failed" % comment)
             test_num += 1
-            slaves_str = ",".join(case[4])
-            cmd_str = "mysqlrpladmin.py --master=%s " % case[2]
+            subordinates_str = ",".join(case[4])
+            cmd_str = "mysqlrpladmin.py --main=%s " % case[2]
             comment = "Test case %s - show health after switchover" % test_num
-            cmd_opts = " --slaves=%s --format=vertical health" % slaves_str
+            cmd_opts = " --subordinates=%s --format=vertical health" % subordinates_str
             res = mutlib.System_test.run_test_case(self, 0, cmd_str+cmd_opts,
                                                    comment)
             if not res:
                 raise MUTLibError("%s: failed" % comment)
             test_num += 1
 
-        cmd_str = "mysqlrpladmin.py --master=%s " % master_conn
+        cmd_str = "mysqlrpladmin.py --main=%s " % main_conn
         cmd_opts = " health --disc=root:root "
-        cmd_opts += "--slaves=%s" % slaves_loopback
+        cmd_opts += "--subordinates=%s" % subordinates_loopback
         comment= "Test case %s - health with loopback and discovery" % test_num
         res = mutlib.System_test.run_test_case(self, 0, cmd_str+cmd_opts,
                                                comment)
@@ -165,8 +165,8 @@ class test(mutlib.System_test):
         commands = ['stop', 'start', 'stop', 'reset']
         for cmd in commands:
             comment = "Test case %s - run command %s" % (test_num, cmd)
-            cmd_str = "mysqlrpladmin.py --master=%s " % master_conn
-            cmd_opts = " --slaves=%s %s" % (slaves_str, cmd)
+            cmd_str = "mysqlrpladmin.py --main=%s " % main_conn
+            cmd_opts = " --subordinates=%s %s" % (subordinates_str, cmd)
             res = mutlib.System_test.run_test_case(self, 0, cmd_str+cmd_opts,
                                                    comment)
             if not res:
@@ -188,19 +188,19 @@ class test(mutlib.System_test):
         self.replace_substring(str(self.s3_port), "PORT4")
         
     def reset_topology(self):
-        # Form replication topology - 1 master, 3 slaves
-        self.master_str = " --master=%s" % \
+        # Form replication topology - 1 main, 3 subordinates
+        self.main_str = " --main=%s" % \
                           self.build_connection_string(self.server1)
-        for slave in [self.server1, self.server2, self.server3, self.server4]:
+        for subordinate in [self.server1, self.server2, self.server3, self.server4]:
             try:
-                slave.exec_query("STOP SLAVE")
-                slave.exec_query("RESET SLAVE")
+                subordinate.exec_query("STOP SLAVE")
+                subordinate.exec_query("RESET SLAVE")
             except:
                 pass
         
-        for slave in [self.server2, self.server3, self.server4]:
-            slave_str = " --slave=%s" % self.build_connection_string(slave)
-            conn_str = self.master_str + slave_str
+        for subordinate in [self.server2, self.server3, self.server4]:
+            subordinate_str = " --subordinate=%s" % self.build_connection_string(subordinate)
+            conn_str = self.main_str + subordinate_str
             cmd = "mysqlreplicate.py --rpl-user=rpl:rpl %s" % conn_str
             res = self.exec_util(cmd, self.res_fname)
             if res != 0:

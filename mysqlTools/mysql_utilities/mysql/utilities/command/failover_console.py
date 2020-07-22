@@ -34,7 +34,7 @@ _COMMAND_KEYS = {'\x1b[A':'ARROW_UP', '\x1b[B':'ARROW_DN'}
 # Minimum number of rows needed to display screen
 _MINIMUM_ROWS = 15
 _HEALTH_LIST = "Replication Health Status"
-_MASTER_GTID_LIST = "Master GTID Executed Set"
+_MASTER_GTID_LIST = "Main GTID Executed Set"
 _MASTER_GTID_COLS = ['gtid']
 _GTID_LISTS = ["Transactions executed on the servers:",
                "Transactions purged from the servers:",
@@ -127,7 +127,7 @@ class FailoverConsole(object):
     """Automatic Failover Console
     
     This class implements a basic, text screen console for displaying
-    information about the master and the replication health for the 
+    information about the main and the replication health for the 
     topology. The interface supports these commands:
     
       - H = show replication health
@@ -139,16 +139,16 @@ class FailoverConsole(object):
     
     """
     
-    def __init__(self, master, get_health_data,
+    def __init__(self, main, get_health_data,
                  get_gtid_data, get_uuid_data, options):
         """Constructor
         
-        The constructor requires the caller to specify a master of the
-        Master class instance, and method pointers for getting health,
+        The constructor requires the caller to specify a main of the
+        Main class instance, and method pointers for getting health,
         gtid, and uuid information. An options dictionary is used to define
         overal behavior of the class methods.
         
-        master[in]          a Master class instance
+        main[in]          a Main class instance
         get_health_data[in] method pointer to heatlh data method
         get_gtid_data[in]   method pointer to gtid data method
         get_uuid_data[in]   method pointer to uuid data method
@@ -174,7 +174,7 @@ class FailoverConsole(object):
         self.old_mode = None
         
         # Callback methods for reading data
-        self.master = master
+        self.main = main
         self.get_health_data = get_health_data
         self.get_gtid_data = get_gtid_data
         self.get_uuid_data = get_uuid_data
@@ -185,51 +185,51 @@ class FailoverConsole(object):
         
         
     def register_instance(self, clear=False, register=True):
-        """Register the console as running on the master.
+        """Register the console as running on the main.
         
         This method will attempt to register the console as running against
-        the master for failover modes auto or elect. If another console is
+        the main for failover modes auto or elect. If another console is
         already registered, this instance becomes blocked resulting in the
         mode change to 'fail' and failover will not occur when this instance
         of the console detects failover.
         
         clear[in]      if True, clear the sentinel database entries on the
-                       master. Default is False.
-        register[in]   if True, register the console on the master. If False,
-                       unregister the console on the master. Default is True.
+                       main. Default is False.
+        register[in]   if True, register the console on the main. If False,
+                       unregister the console on the main. Default is True.
    
         Returns string - new mode if changed     
         """
-        # We cannot check disconnected masters and do not need to check if
+        # We cannot check disconnected mains and do not need to check if
         # we are doing a simple fail mode.
-        if self.master is None or self.mode == 'fail':
+        if self.main is None or self.mode == 'fail':
             return self.mode
         
         # Turn binary log off first
-        self.master.toggle_binlog("DISABLE")
+        self.main.toggle_binlog("DISABLE")
         
-        host_port = (self.master.host, self.master.port)
+        host_port = (self.main.host, self.main.port)
         # Drop the table if specified
         if clear:
-            self.master.exec_query(_DROP_FC_TABLE)
+            self.main.exec_query(_DROP_FC_TABLE)
         
         # Register the console
         if register:
-            res = self.master.exec_query(_CREATE_FC_TABLE)
-            res = self.master.exec_query(_SELECT_FC_TABLE % host_port)
+            res = self.main.exec_query(_CREATE_FC_TABLE)
+            res = self.main.exec_query(_SELECT_FC_TABLE % host_port)
             if res != []:
                 # Someone beat us there. Drat.
                 self.old_mode = self.mode
                 self.mode = 'fail'
             else:
                 # We're first! Yippee.
-                res = self.master.exec_query(_INSERT_FC_TABLE % host_port)
+                res = self.main.exec_query(_INSERT_FC_TABLE % host_port)
         # Unregister the console if our mode was changed
         elif self.old_mode != self.mode:
-            res = self.master.exec_query(_DELETE_FC_TABLE % host_port)
+            res = self.main.exec_query(_DELETE_FC_TABLE % host_port)
         
         # Turn binary log on
-        self.master.toggle_binlog("ENABLE")
+        self.main.toggle_binlog("ENABLE")
         
         return self.mode
 
@@ -262,9 +262,9 @@ class FailoverConsole(object):
         self.gtid_list += 1
         if self.gtid_list > 3:
             self.gtid_list = 0
-        if self.gtid_list == 0 and self.master_gtids:
+        if self.gtid_list == 0 and self.main_gtids:
             self.comment = _MASTER_GTID_LIST
-            rows = self.master_gtids
+            rows = self.main_gtids
         elif self.get_gtid_data:
             gtid_data = self.get_gtid_data()
             self.comment = _GTID_LISTS[self.gtid_list - 1]
@@ -439,32 +439,32 @@ class FailoverConsole(object):
         if self.old_mode is not None and self.old_mode != self.mode:
             print
             print "NOTICE: Failover mode changed to fail due to another"
-            print "        instance of the console running against master."
+            print "        instance of the console running against main."
             self.rows_printed += 2
             self.max_rows -= 3
         print
         self.rows_printed += 4
    
     
-    def _print_master_status(self):
-        """Display the master information
+    def _print_main_status(self):
+        """Display the main information
         
-        This method displays the master information from SHOW MASTER STATUS.
+        This method displays the main information from SHOW MASTER STATUS.
         """
         from mysql.utilities.common.format import format_tabular_list
         
-        # If no master present, don't print anything.
-        if self.master is None:
+        # If no main present, don't print anything.
+        if self.main is None:
             return
         
         try:
-            status = self.master.get_status()[0]
+            status = self.main.get_status()[0]
             if self.logging:
-                logging.info("Master status: binlog: %s, position:%s" %
+                logging.info("Main status: binlog: %s, position:%s" %
                              (status[0], status[1]))
         except:
-            raise UtilRplError("Cannot get master status")
-        print "Master Information"
+            raise UtilRplError("Cannot get main status")
+        print "Main Information"
         print "------------------"
         cols = ("Binary Log File", "Position",
                 "Binlog_Do_DB", "Binlog_Ignore_DB")
@@ -479,18 +479,18 @@ class FailoverConsole(object):
         format_tabular_list(sys.stdout, cols, rows, fmt_opts)
         
         # Display gtid executed set
-        self.master_gtids = []
+        self.main_gtids = []
         for gtid in status[4].split("\n"):
             if len(gtid):
                 # Add each GTID to a tuple to match the required format to
                 # print the full GRID list correctly.
-                self.master_gtids.append((gtid.strip(","),))
+                self.main_gtids.append((gtid.strip(","),))
         print "\nGTID Executed Set"
         try:
-            print self.master_gtids[0][0],
+            print self.main_gtids[0][0],
         except IndexError:
             print "None",
-        if len(self.master_gtids) > 1:
+        if len(self.main_gtids) > 1:
             print "[...]"
         else:
             print
@@ -549,7 +549,7 @@ class FailoverConsole(object):
         if refresh:
             self.clear()
             self._print_header()
-            self._print_master_status()
+            self._print_main_status()
 
         # Print list name
         if comment is None:
@@ -612,7 +612,7 @@ class FailoverConsole(object):
         self.clear()
         self._reset_screen_size()
         self._print_header()
-        self._print_master_status()
+        self._print_main_status()
         # refresh health if already displayed
         if self.report_mode == 'H':
             self.list_data = self._format_health_data()

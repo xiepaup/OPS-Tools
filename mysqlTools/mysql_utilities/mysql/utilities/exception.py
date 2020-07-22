@@ -48,20 +48,20 @@ class UtilRplError(UtilError):
     """Replication errors raised during replication operations.
     """
     
-    def __init__(self, message, errno=0, master=None, slave=None):
+    def __init__(self, message, errno=0, main=None, subordinate=None):
         UtilError.__init__(self, message, errno)
-        self.master = master
-        self.slave = slave
+        self.main = main
+        self.subordinate = subordinate
 
 
 class UtilRplWarn(UtilError):
     """Replication warnings raised during replication operations.
     """
     
-    def __init__(self, message, errno=0, master=None, slave=None):
+    def __init__(self, message, errno=0, main=None, subordinate=None):
         UtilError.__init__(self, message, errno)
-        self.master = master
-        self.slave = slave
+        self.main = main
+        self.subordinate = subordinate
 
 
 class UtilBinlogError(UtilError):

@@ -20,7 +20,7 @@ from mysql.utilities.exception import UtilError, MUTLibError
 
 class test(mutlib.System_test):
     """show replication topology
-    This test runs the mysqlrplshow utility on a known master-slave topology
+    This test runs the mysqlrplshow utility on a known main-subordinate topology
     to print the topology. 
     """
 
@@ -42,7 +42,7 @@ class test(mutlib.System_test):
         res = self.servers.spawn_new_server(self.server_list[0], serverid,
                                            name, mysqld_params)
         if not res:
-            raise MUTLibError("Cannot spawn replication slave server.")
+            raise MUTLibError("Cannot spawn replication subordinate server.")
         server = res[0]
         self.servers.add_new_server(server, True)
 
@@ -50,22 +50,22 @@ class test(mutlib.System_test):
 
     def setup(self):
         self.server_list[0] = self.servers.get_server(0)
-        self.server_list[1] = self.get_server("rep_slave_show")
+        self.server_list[1] = self.get_server("rep_subordinate_show")
         if self.server_list[1] is None:
             return False
-        self.server_list[2] = self.get_server("rep_master_show")
+        self.server_list[2] = self.get_server("rep_main_show")
         if self.server_list[2] is None:
             return False
-        self.server_list[3] = self.get_server("rep_relay_slave")
+        self.server_list[3] = self.get_server("rep_relay_subordinate")
         if self.server_list[3] is None:
             return False
-        self.server_list[4] = self.get_server("slave_leaf")
+        self.server_list[4] = self.get_server("subordinate_leaf")
         if self.server_list[4] is None:
             return False
-        self.server_list[5] = self.get_server("multi_master1")
+        self.server_list[5] = self.get_server("multi_main1")
         if self.server_list[5] is None:
             return False
-        self.server_list[6] = self.get_server("multi_master2")
+        self.server_list[6] = self.get_server("multi_main2")
         if self.server_list[6] is None:
             return False
         self.port_repl.append(self.server_list[1].port)
@@ -80,41 +80,41 @@ class test(mutlib.System_test):
     def run(self):
         self.res_fname = "result.txt"
 
-        master_str = "--master=%s" % \
+        main_str = "--main=%s" % \
                      self.build_connection_string(self.server_list[2])
-        slave_str = " --slave=%s" % \
+        subordinate_str = " --subordinate=%s" % \
                     self.build_connection_string(self.server_list[1])
-        relay_slave_slave = " --slave=%s" % \
+        relay_subordinate_subordinate = " --subordinate=%s" % \
                            self.build_connection_string(self.server_list[3])
-        relay_slave_master = " --master=%s" % \
+        relay_subordinate_main = " --main=%s" % \
                              self.build_connection_string(self.server_list[3])
-        slave_leaf = " --slave=%s" % \
+        subordinate_leaf = " --subordinate=%s" % \
                      self.build_connection_string(self.server_list[4])
 
-        cmd_str = "mysqlrplshow.py --disco=root:root " + master_str
+        cmd_str = "mysqlrplshow.py --disco=root:root " + main_str
 
-        comment = "Test case 1 - show topology of master with no slaves"
+        comment = "Test case 1 - show topology of main with no subordinates"
         cmd_opts = "  --show-list --recurse "
         res = mutlib.System_test.run_test_case(self, 0, cmd_str+cmd_opts,
                                                    comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        conn_str = master_str + slave_str
+        conn_str = main_str + subordinate_str
         
         cmd = "mysqlreplicate.py --rpl-user=rpl:rpl " 
         try:
-            res = self.exec_util(cmd+master_str+slave_str,
+            res = self.exec_util(cmd+main_str+subordinate_str,
                                  self.res_fname)
-            res = self.exec_util(cmd+master_str+relay_slave_slave,
+            res = self.exec_util(cmd+main_str+relay_subordinate_subordinate,
                                  self.res_fname)
-            res = self.exec_util(cmd+relay_slave_master+slave_leaf,
+            res = self.exec_util(cmd+relay_subordinate_main+subordinate_leaf,
                                  self.res_fname)
             
         except UtilError, e:
             raise MUTLibError(e.errmsg)
 
-        cmd_str = "mysqlrplshow.py --disco=root:root " + master_str
+        cmd_str = "mysqlrplshow.py --disco=root:root " + main_str
 
         comment = "Test case 2 - show topology"
         cmd_opts = "  --show-list --recurse "
@@ -131,11 +131,11 @@ class test(mutlib.System_test):
             raise MUTLibError("%s: failed" % comment)
 
         try:
-            circle_master = " --master=%s" % \
+            circle_main = " --main=%s" % \
                             self.build_connection_string(self.server_list[4])
-            circle_slave = " --slave=%s" % \
+            circle_subordinate = " --subordinate=%s" % \
                            self.build_connection_string(self.server_list[2])
-            res = self.exec_util(cmd+circle_master+circle_slave,
+            res = self.exec_util(cmd+circle_main+circle_subordinate,
                                  self.res_fname)
             
         except UtilError, e:
@@ -148,22 +148,22 @@ class test(mutlib.System_test):
         if not res:
             raise MUTLibError("%s: failed" % comment)
         
-        # Create a master:master toplogy
+        # Create a main:main toplogy
         cmd = "mysqlreplicate.py --rpl-user=rpl:rpl " 
         try:
-            cmd_str = cmd + "--master=%s --slave=%s" % \
+            cmd_str = cmd + "--main=%s --subordinate=%s" % \
                       (self.build_connection_string(self.server_list[5]),
                        self.build_connection_string(self.server_list[6]))                        
             res = self.exec_util(cmd_str, self.res_fname)
-            cmd_str = cmd + "--master=%s --slave=%s" % \
+            cmd_str = cmd + "--main=%s --subordinate=%s" % \
                       (self.build_connection_string(self.server_list[6]),
                        self.build_connection_string(self.server_list[5]))                        
             res = self.exec_util(cmd_str, self.res_fname)
         except UtilError, e:
             raise MUTLibError(e.errmsg)
 
-        comment = "Test case 5 - show topology with master:master replication"
-        cmd_str = "mysqlrplshow.py --master=%s --disco=root:root " % \
+        comment = "Test case 5 - show topology with main:main replication"
+        cmd_str = "mysqlrplshow.py --main=%s --disco=root:root " % \
                   self.build_connection_string(self.server_list[5])
         cmd_opts = "  --show-list --recurse "
         res = mutlib.System_test.run_test_case(self, 0, cmd_str+cmd_opts,
@@ -173,7 +173,7 @@ class test(mutlib.System_test):
             
         # Here we need to kill one of the servers to show that the
         # phantom server error from a stale SHOW SLAVE HOSTS is
-        # fixed and the slave does *not* show on the graph.
+        # fixed and the subordinate does *not* show on the graph.
 
         self.servers.stop_server(self.server_list[4])
         self.servers.remove_server(self.server_list[4])
@@ -184,8 +184,8 @@ class test(mutlib.System_test):
         self.results.append("Test case 6 : SHOW SLAVE HOSTS contains %d row.\n" %
                             len(res))
 
-        comment = "Test case 6 - show topology with phantom slave"
-        cmd_str = "mysqlrplshow.py --disco=root:root " + relay_slave_master
+        comment = "Test case 6 - show topology with phantom subordinate"
+        cmd_str = "mysqlrplshow.py --disco=root:root " + relay_subordinate_main
         cmd_opts = "  --show-list "
         res = mutlib.System_test.run_test_case(self, 0, cmd_str+cmd_opts,
                                                comment)
@@ -207,8 +207,8 @@ class test(mutlib.System_test):
         for port in self.port_repl:
             self.replace_substring("%s" % port, "PORT%d" % i)
             i += 1
-        self.replace_result("Error connecting to a slave",
-                            "Error connecting to a slave ...\n")
+        self.replace_result("Error connecting to a subordinate",
+                            "Error connecting to a subordinate ...\n")
         self.replace_result("Error 2002: Can't connect to",
                             "Error ####: Can't connect to local MySQL server\n")
         self.replace_result("Error 2003: Can't connect to",

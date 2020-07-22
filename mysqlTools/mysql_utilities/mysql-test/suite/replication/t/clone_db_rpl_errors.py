@@ -55,7 +55,7 @@ class test(clone_db.test):
         test_num += 1
 
         # Attempt to use --rpl while cloning
-        cmd_str = "mysqldbcopy.py %s %s util_clone:util_clone2 --rpl=slave" % \
+        cmd_str = "mysqldbcopy.py %s %s util_clone:util_clone2 --rpl=subordinate" % \
                   (to_conn, from_conn)
         comment = "Test case %s - error: using --rpl with cloning" % test_num
         res = self.run_test_case(2, cmd_str, comment)

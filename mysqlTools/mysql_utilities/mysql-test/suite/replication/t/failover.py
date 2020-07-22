@@ -151,7 +151,7 @@ class test(rpl_admin_gtid.test):
                 raise MUTLibError("%s: failed - timeout waiting for "
                                   "console to start." % comment)  
                 
-        # Now, kill the master - wha-ha-ha!
+        # Now, kill the main - wha-ha-ha!
         res = server.show_server_variable('pid_file')
         pid_file = open(res[0][1])
         pid = int(pid_file.readline().strip('\n'))
@@ -165,7 +165,7 @@ class test(rpl_admin_gtid.test):
         
         # Need to wait until the process is really dead.
         if self.debug:
-            print "# Waiting for master to stop."
+            print "# Waiting for main to stop."
         i = 0
         while self.is_process_alive(pid, int(server.port)-1,
                                     int(server.port)+1):
@@ -173,9 +173,9 @@ class test(rpl_admin_gtid.test):
             i += 1
             if i > _TIMEOUT:
                 if self.debug:
-                    print "# Timeout master to fail."
+                    print "# Timeout main to fail."
                 raise MUTLibError("%s: failed - timeout waiting for "
-                                  "master to end." % comment)
+                                  "main to end." % comment)
          
         # Now wait for interval to occur.
         if self.debug:
@@ -249,42 +249,42 @@ class test(rpl_admin_gtid.test):
     def run(self):
         self.res_fname = "result.txt"
         
-        master_conn = self.build_connection_string(self.server1).strip(' ')
-        slave1_conn = self.build_connection_string(self.server2).strip(' ')
-        slave2_conn = self.build_connection_string(self.server3).strip(' ')
-        slave3_conn = self.build_connection_string(self.server4).strip(' ')
+        main_conn = self.build_connection_string(self.server1).strip(' ')
+        subordinate1_conn = self.build_connection_string(self.server2).strip(' ')
+        subordinate2_conn = self.build_connection_string(self.server3).strip(' ')
+        subordinate3_conn = self.build_connection_string(self.server4).strip(' ')
         
-        master_str = "--master=" + master_conn
-        slaves_str = "--slaves=" + \
-                     ",".join([slave1_conn, slave2_conn, slave3_conn])
+        main_str = "--main=" + main_conn
+        subordinates_str = "--subordinates=" + \
+                     ",".join([subordinate1_conn, subordinate2_conn, subordinate3_conn])
         candidates_str = "--candidates=" + \
-                         ",".join([slave1_conn, slave2_conn, slave3_conn])
+                         ",".join([subordinate1_conn, subordinate2_conn, subordinate3_conn])
         
         self.test_results = []
         self.test_cases = []
 
         failover_cmd = "python ../scripts/mysqlfailover.py --interval=10 " + \
-                       " --discover-slaves-login=root:root %s --failover-" + \
+                       " --discover-subordinates-login=root:root %s --failover-" + \
                        'mode=%s --log=%s --exec-post-fail="mkdir ' + \
                        self.failover_dir + '" --timeout=5 '
         
-        conn_str = " ".join([master_str, slaves_str])
+        conn_str = " ".join([main_str, subordinates_str])
         str = failover_cmd % (conn_str, 'auto', "1"+_FAILOVER_LOG)
-        str += " --candidates=%s " % slave1_conn
+        str += " --candidates=%s " % subordinate1_conn
         self.test_cases.append((self.server1, str, True, "1"+_FAILOVER_LOG,
                     "Test case 1 - Simple failover with --failover=auto.",
                     "Failover complete"))
-        str = failover_cmd % ("--master=%s" % slave1_conn, 'elect',
+        str = failover_cmd % ("--main=%s" % subordinate1_conn, 'elect',
                               "2"+_FAILOVER_LOG)
-        str += " --candidates=%s " % slave2_conn
+        str += " --candidates=%s " % subordinate2_conn
         self.test_cases.append((self.server2, str, True, "2"+_FAILOVER_LOG,
                     "Test case 2 - Simple failover with --failover=elect.",
                     "Failover complete"))
-        str = failover_cmd % ("--master=%s" % slave2_conn, 'fail',
+        str = failover_cmd % ("--main=%s" % subordinate2_conn, 'fail',
                               "3"+_FAILOVER_LOG)
         self.test_cases.append((self.server3, str, False, "3"+_FAILOVER_LOG,
                     "Test case 3 - Simple failover with --failover=fail.",
-                    "Master has failed and automatic"))
+                    "Main has failed and automatic"))
 
         for test_case in self.test_cases:
             res = self.test_failover_console(test_case, 20)
@@ -294,7 +294,7 @@ class test(rpl_admin_gtid.test):
                 raise MUTLibError("%s: failed" % test_case[4])
                 
                 
-        # Now we must test the --force option. But first, ensure the master
+        # Now we must test the --force option. But first, ensure the main
         # does not have the table.
         try:
             self.server4.exec_query("DROP TABLE IF EXISTS mysql.failover_console")
@@ -309,8 +309,8 @@ class test(rpl_admin_gtid.test):
             print comment
 
         failover_cmd = "python ../scripts/mysqlfailover.py --interval=10 " + \
-                       " --discover-slaves-login=root:root --force " + \
-                       "--master=%s --log=%s" % (slave3_conn, "4"+_FAILOVER_LOG)
+                       " --discover-subordinates-login=root:root --force " + \
+                       "--main=%s --log=%s" % (subordinate3_conn, "4"+_FAILOVER_LOG)
         
         if self.debug:
             print failover_cmd

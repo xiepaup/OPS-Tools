@@ -91,7 +91,7 @@ class test(replicate.test):
                   "--rpl-user=rpl:rpl %s " % from_conn
 
         comment = "Test case %s - error: --rpl-file bad path" % test_num
-        option = " --rpl=master --rpl-file=/bad/path/not/there.atall "
+        option = " --rpl=main --rpl-file=/bad/path/not/there.atall "
         res = mutlib.System_test.run_test_case(self, 1, cmd_str + option,
                                                comment)
         if not res:
@@ -104,7 +104,7 @@ class test(replicate.test):
         cmd_str = "mysqldbexport.py util_test --export=data %s " % from_conn
 
         comment = "Test case %s - warning: --rpl-user missing" % test_num
-        option = " --rpl=master "
+        option = " --rpl=main "
         res = mutlib.System_test.run_test_case(self, 0, cmd_str + option,
                                                comment)
         if not res:
@@ -112,7 +112,7 @@ class test(replicate.test):
         test_num += 1
 
         comment = "Test case %s - error: --rpl-user missing user" % test_num
-        option = " --rpl=master --rpl-user=missing "
+        option = " --rpl=main --rpl-user=missing "
         res = mutlib.System_test.run_test_case(self, 1, cmd_str + option,
                                                comment)
         if not res:
@@ -121,7 +121,7 @@ class test(replicate.test):
 
         comment = "Test case %s - error: --rpl-user missing privileges" % \
                   test_num
-        option = " --rpl=master --rpl-user=imnotamouse "
+        option = " --rpl=main --rpl-user=imnotamouse "
         res = mutlib.System_test.run_test_case(self, 1, cmd_str + option,
                                                comment)
         if not res:
@@ -133,8 +133,8 @@ class test(replicate.test):
         self.server2.exec_query("STOP SLAVE")
         self.server2.exec_query("RESET SLAVE")
 
-        comment = "Test case %s - error: slave not connected" % test_num
-        option = " --rpl=slave "
+        comment = "Test case %s - error: subordinate not connected" % test_num
+        option = " --rpl=subordinate "
         res = mutlib.System_test.run_test_case(self, 1, cmd_str + option,
                                                comment)
         if not res:
@@ -147,7 +147,7 @@ class test(replicate.test):
                   "--rpl-user=rpl:rpl %s " % from_conn
 
         comment = "Test case %s - error: no binlog" % test_num
-        option = " --rpl=master "
+        option = " --rpl=main "
         res = mutlib.System_test.run_test_case(self, 1, cmd_str + option,
                                                comment)
         if not res:

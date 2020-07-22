@@ -66,9 +66,9 @@ def get_copy_lock(server, db_list, options, include_mysql=False,
     table_lock_list = []
     
     # Determine if we need to use FTWRL. There are two conditions:
-    #  - running on master (rpl_mode = 'master')
+    #  - running on main (rpl_mode = 'main')
     #  - using locking = 'lock-all' and rpl_mode present
-    if (rpl_mode in ["master", "both"]) or (rpl_mode and locking == 'lock-all'):
+    if (rpl_mode in ["main", "both"]) or (rpl_mode and locking == 'lock-all'):
         new_opts = options.copy()
         new_opts['locking'] = 'flush'
         lock = Lock(server, [], new_opts)
@@ -206,7 +206,7 @@ def copy_db(src_val, dest_val, db_list, options):
     from mysql.utilities.common.database import Database
     from mysql.utilities.common.options import check_engine_options
     from mysql.utilities.common.server import connect_servers
-    from mysql.utilities.command.dbexport import get_change_master_command
+    from mysql.utilities.command.dbexport import get_change_main_command
     from mysql.utilities.command.dbexport import get_gtid_commands
 
     verbose = options.get("verbose", False)
@@ -347,7 +347,7 @@ def copy_db(src_val, dest_val, db_list, options):
         new_opts = options.copy()
         new_opts['multiline'] = False
         new_opts['strict'] = True
-        rpl_info = get_change_master_command(src_val, new_opts)
+        rpl_info = get_change_main_command(src_val, new_opts)
         destination.exec_query("STOP SLAVE;")
 
     # Copy objects

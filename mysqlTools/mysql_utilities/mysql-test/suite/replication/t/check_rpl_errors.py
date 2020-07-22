@@ -22,7 +22,7 @@ from mysql.utilities.exception import MUTLibError
 
 class test(check_rpl.test):
     """check replication conditions
-    This test runs the mysqlrplcheck utility on a known master-slave topology
+    This test runs the mysqlrplcheck utility on a known main-subordinate topology
     to test various errors. It uses the check_rpl test as a parent for
     setup and teardown methods.
     
@@ -41,9 +41,9 @@ class test(check_rpl.test):
     def run(self):
         self.res_fname = "result.txt"
 
-        master_str = "--master=%s" % self.build_connection_string(self.server2)
-        slave_str = " --slave=%s" % self.build_connection_string(self.server1)
-        conn_str = master_str + slave_str
+        main_str = "--main=%s" % self.build_connection_string(self.server2)
+        subordinate_str = " --subordinate=%s" % self.build_connection_string(self.server1)
+        conn_str = main_str + subordinate_str
         
         cmd = "mysqlreplicate.py --rpl-user=rpl:rpl " 
         try:
@@ -53,15 +53,15 @@ class test(check_rpl.test):
 
         cmd_str = "mysqlrplcheck.py " + conn_str
 
-        comment = "Test case 1 - master parameter invalid"
-        cmd_opts = " %s --master=root_root_root" % slave_str
+        comment = "Test case 1 - main parameter invalid"
+        cmd_opts = " %s --main=root_root_root" % subordinate_str
         res = mutlib.System_test.run_test_case(self, 2, cmd_str+cmd_opts,
                                                    comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
             
-        comment = "Test case 2 - slave parameter invalid"
-        cmd_opts = " %s --slave=root_root_root" % master_str
+        comment = "Test case 2 - subordinate parameter invalid"
+        cmd_opts = " %s --subordinate=root_root_root" % main_str
         res = mutlib.System_test.run_test_case(self, 2, cmd_str+cmd_opts,
                                                    comment)
         if not res:
@@ -69,31 +69,31 @@ class test(check_rpl.test):
 
         comment = "Test case 3 - same server literal specification"
         same_str = self.build_connection_string(self.server2)
-        cmd_opts = " --master=%s --slave=%s" % (same_str, same_str)
+        cmd_opts = " --main=%s --subordinate=%s" % (same_str, same_str)
         res = mutlib.System_test.run_test_case(self, 2, cmd_str+cmd_opts,
                                                    comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        comment = "Test case 4 - error: invalid login to server (master)"
+        comment = "Test case 4 - error: invalid login to server (main)"
         res = mutlib.System_test.run_test_case(self, 1, cmd_str +
-                        slave_str + " --master=nope@nada:localhost:5510",
+                        subordinate_str + " --main=nope@nada:localhost:5510",
                         comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
         conn_values = self.get_connection_values(self.server1)
         
-        comment = "Test case 5 - error: invalid login to server (slave)"
+        comment = "Test case 5 - error: invalid login to server (subordinate)"
         res = mutlib.System_test.run_test_case(self, 1, cmd_str +
-                        master_str + " --slave=nope@nada:localhost:5511",
+                        main_str + " --subordinate=nope@nada:localhost:5511",
                         comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
             
-        comment = "Test case 6 - master and slave same host"
+        comment = "Test case 6 - main and subordinate same host"
         res = mutlib.System_test.run_test_case(self, 2, cmd_str +
-                        master_str + " --slave=root:root@%s:%s" %
+                        main_str + " --subordinate=root:root@%s:%s" %
                         (socket.gethostname().split('.', 1)[0],
                          self.server2.port), comment)
         if not res:
@@ -115,13 +115,13 @@ class test(check_rpl.test):
                             "Error ####: Can't connect to local MySQL server "
                             "####...\n")
 
-        self.replace_result("mysqlrplcheck.py: error: Master connection "
+        self.replace_result("mysqlrplcheck.py: error: Main connection "
                             "values invalid",
-                            "mysqlrplcheck.py: error: Master connection "
+                            "mysqlrplcheck.py: error: Main connection "
                             "values invalid\n")
-        self.replace_result("mysqlrplcheck.py: error: Slave connection "
+        self.replace_result("mysqlrplcheck.py: error: Subordinate connection "
                             "values invalid",
-                            "mysqlrplcheck.py: error: Slave connection "
+                            "mysqlrplcheck.py: error: Subordinate connection "
                             "values invalid\n")
 
         return True

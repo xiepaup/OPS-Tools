@@ -17,7 +17,7 @@
 
 """
 This module contains an abstraction of a topolgy map object used to discover
-slaves and down-stream replicants for mapping topologies.
+subordinates and down-stream replicants for mapping topologies.
 """
 
 from mysql.utilities.common.options import parse_user_password
@@ -27,28 +27,28 @@ _START_PORT = 3306
 
 class TopologyMap(object):
     """The TopologyMap class can be used to connect to a running MySQL server
-    and discover its slaves. Setting the option "recurse" permits the
-    class to discover a replication topology by finding the slaves for each
-    slave for the first master requested.
+    and discover its subordinates. Setting the option "recurse" permits the
+    class to discover a replication topology by finding the subordinates for each
+    subordinate for the first main requested.
 
     To generate a topology map, the caller must call the generate_topology_map()
     method to build the topology. This is left as a separate state because it
     can be a lengthy process thereby too long for a constructor method.
  
     The class also includes methods for printing a graph of the topology
-    as well as returning a list of master, slave tuples reporting the
+    as well as returning a list of main, subordinate tuples reporting the
     host name and port for each.
     """
 
     def __init__(self, seed_server, options={}):
         """Constructor
 
-        seed_server[in]    Master (seed) server connection dictionary                           
+        seed_server[in]    Main (seed) server connection dictionary                           
         options[in]        options for controlling behavior:
-          recurse          If True, check each slave found for add'l slaves
+          recurse          If True, check each subordinate found for add'l subordinates
                            Default = False
-          prompt_user      If True, prompt user if slave connection fails with
-                           master connection parameters
+          prompt_user      If True, prompt user if subordinate connection fails with
+                           main connection parameters
                            Default = False
           quiet            if True, print only the data
                            Default = False
@@ -70,14 +70,14 @@ class TopologyMap(object):
 
 
     def _connect(self, conn):
-        """Find the attached slaves for a list of server connections.
+        """Find the attached subordinates for a list of server connections.
         
-        This method connects to each server in the list and retrieves its slaves.
+        This method connects to each server in the list and retrieves its subordinates.
         It can be called recursively if the recurse parameter is True.
         
         conn[in]           Connection dictionary used to connect to server
     
-        Returns tuple - master Server class instance, master:host string
+        Returns tuple - main Server class instance, main:host string
         """
         import getpass
         
@@ -85,15 +85,15 @@ class TopologyMap(object):
     
         conn_options = {
             'quiet'     : self.quiet,
-            'src_name'  : "master",
+            'src_name'  : "main",
             'dest_name' : None,
             'version'   : "5.0.0",
             'unique'    : True,
         }
         
-        master_info = "%s:%s" % (conn['host'],
+        main_info = "%s:%s" % (conn['host'],
                                  conn['port'])
-        master = None
+        main = None
         
         # Clear socket if used with a local server
         if (conn['host'] == 'localhost' or \
@@ -108,12 +108,12 @@ class TopologyMap(object):
         for i in range(0,self.num_retries+1):
             try:
                 servers = connect_servers(conn, None, conn_options)
-                master = servers[0]
+                main = servers[0]
                 break
             except UtilError, e:
                 print "FAILED.\n"
                 if i < self.num_retries and self.prompt_user:
-                    print "Connection to %s has failed.\n" % master_info + \
+                    print "Connection to %s has failed.\n" % main_info + \
                     "Please enter the following information " + \
                     "to connect to this server."
                     conn['user'] = raw_input("User name: ")
@@ -122,7 +122,7 @@ class TopologyMap(object):
                     # retries expired - re-raise error if still failing
                     raise UtilError(e.errmsg)
     
-        return (master, master_info)
+        return (main, main_info)
     
     
     def _check_permissions(self, server, priv):
@@ -146,41 +146,41 @@ class TopologyMap(object):
                             "%s privilege." % priv)
     
 
-    def _get_slaves(self, max_depth, seed_conn=None, masters_found=[]):
-        """Find the attached slaves for a list of server connections.
+    def _get_subordinates(self, max_depth, seed_conn=None, mains_found=[]):
+        """Find the attached subordinates for a list of server connections.
         
-        This method connects to each server in the list and retrieves its slaves.
+        This method connects to each server in the list and retrieves its subordinates.
         It can be called recursively if the recurse option is True.
     
         max_depth[in]       Maximum depth of recursive search
-        seed_conn[in]       Current master connection dictionary. Initially,
-                            this is the seed server (original master defined
+        seed_conn[in]       Current main connection dictionary. Initially,
+                            this is the seed server (original main defined
                             in constructor)
-        masters_found[in]   a list of all servers in master roles - used to
+        mains_found[in]   a list of all servers in main roles - used to
                             detect a circular replication topology. Initially,
-                            this is an empty list as the master detection must
+                            this is an empty list as the main detection must
                             occur as the topology is traversed.
     
-        Returns list - list of slaves connected to each server in list
+        Returns list - list of subordinates connected to each server in list
         """
         topology = []
         if seed_conn is None:
             seed_conn = self.seed_server
     
-        master, master_info = self._connect(seed_conn)
-        if master is None:
+        main, main_info = self._connect(seed_conn)
+        if main is None:
             return []
    
         # Check user permissions 
-        self._check_permissions(master, "REPLICATION SLAVE")
+        self._check_permissions(main, "REPLICATION SLAVE")
 
-        # Save the master for circular replication identification
-        masters_found.append(master_info)
+        # Save the main for circular replication identification
+        mains_found.append(main_info)
         
         if not self.quiet:
-            print "# Finding slaves for master: %s" % master_info
+            print "# Finding subordinates for main: %s" % main_info
     
-        # See if the user wants us to discover slaves.
+        # See if the user wants us to discover subordinates.
         discover = self.options.get("discover", None)
         if discover is None:
             return
@@ -189,47 +189,47 @@ class TopologyMap(object):
         user, password = parse_user_password(discover, options=self.options)
 
         # Get replication topology
-        slaves = master.get_slaves(user, password)
-        slave_list = []
+        subordinates = main.get_subordinates(user, password)
+        subordinate_list = []
         depth = 0
-        if len(slaves) > 0:
-            for slave in slaves:
-                if slave.find(":") > 0:
-                    host, port = slave.split(":", 1)
+        if len(subordinates) > 0:
+            for subordinate in subordinates:
+                if subordinate.find(":") > 0:
+                    host, port = subordinate.split(":", 1)
                 else:
-                    host = slave
+                    host = subordinate
                     port = _START_PORT  # Use the default
-                slave_conn = self.seed_server.copy()
-                slave_conn['host'] = host
-                slave_conn['port'] = port
+                subordinate_conn = self.seed_server.copy()
+                subordinate_conn['host'] = host
+                subordinate_conn['port'] = port
                 
                 # Now check for circular replication topology - do not recurse
-                # if slave is also a master.
-                if self.recurse and not slave in masters_found and \
+                # if subordinate is also a main.
+                if self.recurse and not subordinate in mains_found and \
                    ((max_depth is None) or (depth < max_depth)):
-                    new_list = self._get_slaves(max_depth, slave_conn,
-                                                masters_found)
+                    new_list = self._get_subordinates(max_depth, subordinate_conn,
+                                                mains_found)
                     if new_list == []:
-                        slave_list.append((slave, []))
+                        subordinate_list.append((subordinate, []))
                     else:
-                        slave_list.append(new_list)
+                        subordinate_list.append(new_list)
                     depth += 1
                 else:
-                    slave_list.append((slave, []))
-        topology.append((master_info, slave_list))
+                    subordinate_list.append((subordinate, []))
+        topology.append((main_info, subordinate_list))
     
         return topology
 
 
     def generate_topology_map(self, max_depth):
-        """Find the attached slaves for a list of server connections.
+        """Find the attached subordinates for a list of server connections.
         
         This method generates the topology for the seed server specified at
         instantiation.
 
         max_depth[in]       Maximum depth of recursive search
         """
-        self.topology = self._get_slaves(max_depth)
+        self.topology = self._get_subordinates(max_depth)
 
 
     def depth(self):
@@ -240,30 +240,30 @@ class TopologyMap(object):
         return len(self.topology)
 
 
-    def slaves_found(self):
-        """Check to see if any slaves were found.
+    def subordinates_found(self):
+        """Check to see if any subordinates were found.
         
-        Returns bool - True if slaves found, False if no slaves.
+        Returns bool - True if subordinates found, False if no subordinates.
         """
         return not (len(self.topology) and self.topology[0][1] == [])
 
 
-    def print_graph(self, topology_list=[], masters_found=[],
+    def print_graph(self, topology_list=[], mains_found=[],
                     level=0, preamble=""):
         """Prints a graph of the topology map to standard output.
         
         This method traverses a list of the topology and prints a graph. The
         method is designed to be recursive traversing the list to print the
-        slaves for each master in the topology. It will also detect a circular
+        subordinates for each main in the topology. It will also detect a circular
         replication segment and indicate it on the graph.
         
-        topology_list[in]   a list in the form (master, slave) of server
-        masters_found[in]   a list of all servers in master roles - used to
+        topology_list[in]   a list in the form (main, subordinate) of server
+        mains_found[in]   a list of all servers in main roles - used to
                             detect a circular replication topology. Initially,
-                            this is an empty list as the master detection must
+                            this is an empty list as the main detection must
                             occur as the toplogy is traversed.
         level[in]           the level of indentation - increases with each
-                            set of slaves found in topology
+                            set of subordinates found in topology
         preamble[in]        prefix calculated during recursion to indent text
         """
         # if first iteration, use the topology list generated earlier
@@ -276,75 +276,75 @@ class TopologyMap(object):
         # Detect if we are looking at a sublist or not. Get sublist.
         if len(topology_list) == 1:
             topology_list = topology_list[0]
-        master = topology_list[0]
+        main = topology_list[0]
         
-        # Save the master for circular replication identification
-        masters_found.append(master)
+        # Save the main for circular replication identification
+        mains_found.append(main)
 
-        # For each slave, print the graph link
-        slaves = topology_list[1]
-        stop = len(slaves)
+        # For each subordinate, print the graph link
+        subordinates = topology_list[1]
+        stop = len(subordinates)
         if stop > 0:
-            # Level 0 is always the first master in the topology.
+            # Level 0 is always the first main in the topology.
             if level == 0:
-                print "%s (MASTER)" % master
+                print "%s (MASTER)" % main
             for i in range(0,stop):
-                if len(slaves[i]) == 1:
-                    slave = slaves[i][0]
+                if len(subordinates[i]) == 1:
+                    subordinate = subordinates[i][0]
                 else:
-                    slave = slaves[i]
+                    subordinate = subordinates[i]
                 new_preamble = preamble + "   "
                 print new_preamble+"|"
                 role = "(SLAVE"
-                if not slave[1] == [] or slave[0] in masters_found:
+                if not subordinate[1] == [] or subordinate[0] in mains_found:
                     role += " + MASTER"
                 role += ")"
-                print "%s+--- %s" % (new_preamble, slave[0]),
+                print "%s+--- %s" % (new_preamble, subordinate[0]),
                 
-                if (slave[0] in masters_found):
+                if (subordinate[0] in mains_found):
                     print "<-->",
                 else:
                     print "-",
                 print "%s" % role
                     
-                if not slave[1] == []:
+                if not subordinate[1] == []:
                     if i < stop-1:
                         new_preamble += "|"
                     else:
                         new_preamble += " "
-                    self.print_graph(slave, masters_found,
+                    self.print_graph(subordinate, mains_found,
                                      level+1, new_preamble)
 
 
     def _get_row(self, topology_list):
-        """Get a row (master, slave) for the topology map.
+        """Get a row (main, subordinate) for the topology map.
         
         topology_list[in]  The topology list
         
-        Returns tuple - a row (master, slave)
+        Returns tuple - a row (main, subordinate)
         """
         new_row = []
         if len(topology_list) == 1:
             topology_list = topology_list[0]
-        master = topology_list[0]
-        slaves = topology_list[1]
-        for slave in slaves:
-            if len(slave) == 1:
-                new_slave = slave[0]
+        main = topology_list[0]
+        subordinates = topology_list[1]
+        for subordinate in subordinates:
+            if len(subordinate) == 1:
+                new_subordinate = subordinate[0]
             else:
-                new_slave = slave
-            new_row.append((master, new_slave[0]))
-            new_row.extend(self._get_row(new_slave))
+                new_subordinate = subordinate
+            new_row.append((main, new_subordinate[0]))
+            new_row.extend(self._get_row(new_subordinate))
         return new_row
 
 
     def get_topology_map(self):
         """Get a list of the topology map suitable for export
         
-        Returns list - a list of masters and their slaves in two columns
+        Returns list - a list of mains and their subordinates in two columns
         """
         # Get a row for the list
         # make a list from the topology
-        master_slaves = [self._get_row(row) for row in self.topology]
-        return master_slaves[0]
+        main_subordinates = [self._get_row(row) for row in self.topology]
+        return main_subordinates[0]
 

@@ -25,24 +25,24 @@ _TEST_CASE_RESULTS = [
     # BEFORE:
     #   SHOW DATABASES LIKE 'util_test'
     #   SELECT COUNT(*) FROM util_test.t1
-    #   SHOW DATABASES LIKE 'master_db1'
-    #   SELECT COUNT(*) FROM master_db1.t1
+    #   SHOW DATABASES LIKE 'main_db1'
+    #   SELECT COUNT(*) FROM main_db1.t1
     # AFTER:
     #   SHOW DATABASES LIKE 'util_test'
     #   SELECT COUNT(*) FROM util_test.t1
-    #   SHOW DATABASES LIKE 'master_db1'
-    #   SELECT COUNT(*) FROM master_db1.t1
-    #   <insert 2 rows into master_db1.t1>
-    #   SELECT COUNT(*) FROM master_db1.t1
-    [0, 0, 'util_test', '7', None, False, 'util_test', '7', 'master_db1', '3', '5'],
-    [0, 0, 'util_test', '7', None, False, 'util_test', '7', 'master_db1', '5', '7'],
-    [0, 0, 'util_test', '7', None, False, 'util_test', '7', 'master_db1', '7', '9'],
-    [0, 0, 'util_test', '7', None, False, 'util_test', '7', 'master_db1', '9', '11'],
-    [0, 0, 'util_test', '7', None, False, 'util_test', '7', 'master_db1', '11', '13'],
-    [0, 0, None, False, None, False, 'util_test', '7', 'master_db1', '13', '15'],
-    [0, 0, None, False, None, False, 'util_test', '7', 'master_db1', '15', '17'],
-    [0, 0, None, False, None, False, 'util_test', '7', 'master_db1', '17', '17'],
-    [0, 0, None, False, None, False, 'util_test', '7', 'master_db1', '19', '21'],
+    #   SHOW DATABASES LIKE 'main_db1'
+    #   SELECT COUNT(*) FROM main_db1.t1
+    #   <insert 2 rows into main_db1.t1>
+    #   SELECT COUNT(*) FROM main_db1.t1
+    [0, 0, 'util_test', '7', None, False, 'util_test', '7', 'main_db1', '3', '5'],
+    [0, 0, 'util_test', '7', None, False, 'util_test', '7', 'main_db1', '5', '7'],
+    [0, 0, 'util_test', '7', None, False, 'util_test', '7', 'main_db1', '7', '9'],
+    [0, 0, 'util_test', '7', None, False, 'util_test', '7', 'main_db1', '9', '11'],
+    [0, 0, 'util_test', '7', None, False, 'util_test', '7', 'main_db1', '11', '13'],
+    [0, 0, None, False, None, False, 'util_test', '7', 'main_db1', '13', '15'],
+    [0, 0, None, False, None, False, 'util_test', '7', 'main_db1', '15', '17'],
+    [0, 0, None, False, None, False, 'util_test', '7', 'main_db1', '17', '17'],
+    [0, 0, None, False, None, False, 'util_test', '7', 'main_db1', '19', '21'],
 ]
 
 _FORMATS = ['sql', 'csv', 'tab', 'vertical', 'grid']
@@ -56,16 +56,16 @@ _IMPORT_CMD = "mysqldbimport.py %s %s --import=both --format=%s %s"
 class test(copy_db_rpl.test):
     """test export-to-import with replication features
     This test executes the replication feature in mysqldbexport via
-    mysqldbimport to sync a slave and to test provisioning a slave from either
-    a master or a slave. It uses the copy_db_rpl test as a parent for testing
+    mysqldbimport to sync a subordinate and to test provisioning a subordinate from either
+    a main or a subordinate. It uses the copy_db_rpl test as a parent for testing
     methods.
     """
     
     # Test Cases:
-    #    - copy extra db on master
+    #    - copy extra db on main
     #      do once for each format 
-    #    - provision a new slave from master
-    #    - provision a new slave from existing slave
+    #    - provision a new subordinate from main
+    #    - provision a new subordinate from existing subordinate
         
     def check_prerequisites(self):
         if self.servers.get_server(0).check_version_compat(5, 6, 5):
@@ -84,16 +84,16 @@ class test(copy_db_rpl.test):
 
         # TODO : make a test for '--skip-rpl'
 
-        # Copy master database
+        # Copy main database
         test_num = 1
-        db_list = ["master_db1"]
+        db_list = ["main_db1"]
         to_conn = "--server=" + self.build_connection_string(self.server2)
         for exp_fmt in _FORMATS:
             cmd_list = []
             comment = "Test case %s - Copy extra database from " % test_num + \
-                      "master to slave - format = " 
+                      "main to subordinate - format = " 
 
-            exp_cmd = _EXPORT_CMD % (exp_fmt, "master", " ".join(db_list),
+            exp_cmd = _EXPORT_CMD % (exp_fmt, "main", " ".join(db_list),
                                      from_conn, "", _RPL_FILE)
             cmd_list.append(exp_cmd)
     
@@ -109,18 +109,18 @@ class test(copy_db_rpl.test):
             test_num += 1
         
         
-        # Provision a new slave from master
+        # Provision a new subordinate from main
         to_conn = "--server=" + self.build_connection_string(self.server3)
-        db_list = ["util_test", "master_db1"]
+        db_list = ["util_test", "main_db1"]
         cmd_list = []
-        exp_cmd = _EXPORT_CMD % ("sql", "master", " ".join(db_list),
+        exp_cmd = _EXPORT_CMD % ("sql", "main", " ".join(db_list),
                                  from_conn, "", _RPL_FILE)
         cmd_list.append(exp_cmd)
 
         imp_str = _IMPORT_CMD % (to_conn, _RPL_FILE, "sql", "")
         cmd_list.append(imp_str)        
 
-        comment = "Test case %s - Provision a new slave from the master" % \
+        comment = "Test case %s - Provision a new subordinate from the main" % \
                   test_num
         res = self.run_test_case(0, test_num, self.server1, self.server1,
                                  self.server3, cmd_list, db_list,
@@ -130,17 +130,17 @@ class test(copy_db_rpl.test):
             raise MUTLibError("%s: failed" % comment)
         test_num += 1
                 
-        # Provision a new slave from existing slave
+        # Provision a new subordinate from existing subordinate
         from_conn = "--server=" + self.build_connection_string(self.server2)
         cmd_list = []
-        exp_cmd = _EXPORT_CMD % ("sql", "slave", " ".join(db_list),
+        exp_cmd = _EXPORT_CMD % ("sql", "subordinate", " ".join(db_list),
                                  from_conn, "", _RPL_FILE)
         cmd_list.append(exp_cmd)
 
         imp_str = _IMPORT_CMD % (to_conn, _RPL_FILE, "sql", "")
         cmd_list.append(imp_str)        
 
-        comment = "Test case %s - Provision a new slave from existing slave" % \
+        comment = "Test case %s - Provision a new subordinate from existing subordinate" % \
                   test_num
         res = self.run_test_case(0, test_num, self.server1, self.server2,
                                  self.server3, cmd_list, db_list,
@@ -155,10 +155,10 @@ class test(copy_db_rpl.test):
         # commands are skipped.
         self.server3.exec_query("STOP SLAVE")
         self.server3.exec_query("DROP DATABASE util_test")
-        self.server3.exec_query("DROP DATABASE master_db1")
+        self.server3.exec_query("DROP DATABASE main_db1")
         
         cmd_list = []
-        exp_cmd = _EXPORT_CMD % ("sql", "slave", " ".join(db_list),
+        exp_cmd = _EXPORT_CMD % ("sql", "subordinate", " ".join(db_list),
                                  from_conn, "", _RPL_FILE)
         cmd_list.append(exp_cmd)
 
@@ -178,10 +178,10 @@ class test(copy_db_rpl.test):
         self.server3.exec_query("STOP SLAVE")
         self.server3.exec_query("RESET SLAVE")
         self.server3.exec_query("DROP DATABASE util_test")
-        self.server3.exec_query("DROP DATABASE master_db1")
+        self.server3.exec_query("DROP DATABASE main_db1")
         
         cmd_list = []
-        exp_cmd = _EXPORT_CMD % ("sql", "slave", " ".join(db_list),
+        exp_cmd = _EXPORT_CMD % ("sql", "subordinate", " ".join(db_list),
                                  from_conn, "", _RPL_FILE)
         cmd_list.append(exp_cmd)
 

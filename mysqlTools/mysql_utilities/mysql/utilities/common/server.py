@@ -175,8 +175,8 @@ def get_local_servers(all=False, start=3306, end=3333, datadir_prefix=None):
 def get_server(name, values, quiet):        
     """Connect to a server and return Server instance
     
-    If the name is 'master' or 'slave', the connection will be made via the
-    Master or Slave class else a normal Server class shall be used.
+    If the name is 'main' or 'subordinate', the connection will be made via the
+    Main or Subordinate class else a normal Server class shall be used.
     
     name[in]           name of the server
     values[in]         dictionary of connection values
@@ -184,8 +184,8 @@ def get_server(name, values, quiet):
     
     Returns Server class instance
     """
-    from mysql.utilities.common.replication import Master
-    from mysql.utilities.common.replication import Slave
+    from mysql.utilities.common.replication import Main
+    from mysql.utilities.common.replication import Subordinate
     
     server_conn = None
 
@@ -197,10 +197,10 @@ def get_server(name, values, quiet):
         'conn_info' : values,
         'role'      : name,
     }
-    if name.lower() == 'master':
-        server_conn = Master(server_options)
-    elif name.lower() == 'slave':
-        server_conn = Slave(server_options)
+    if name.lower() == 'main':
+        server_conn = Main(server_options)
+    elif name.lower() == 'subordinate':
+        server_conn = Subordinate(server_options)
     else:
         server_conn = Server(server_options)
     server_conn.connect()
@@ -436,7 +436,7 @@ class Server(object):
         options[in]        options for controlling behavior:
             conn_info      a dictionary containing connection information
                            (user, passwd, host, port, socket)
-            role           Name or role of server (e.g., server, master)
+            role           Name or role of server (e.g., server, main)
             verbose        print extra data during operations (optional)
                            default value = False
             charset        Default character set for the connection.
@@ -975,10 +975,10 @@ class Server(object):
             return (this_list, None)
 
         same = set(this_list) & set(other_list)
-        master_extra = _convert_set_to_list(set(this_list) - same)
-        slave_extra = _convert_set_to_list(set(other_list) - same)
+        main_extra = _convert_set_to_list(set(this_list) - same)
+        subordinate_extra = _convert_set_to_list(set(other_list) - same)
 
-        return (master_extra, slave_extra)
+        return (main_extra, subordinate_extra)
 
 
     def has_storage_engine(self, target):

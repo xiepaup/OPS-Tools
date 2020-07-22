@@ -35,23 +35,23 @@ class test(rpl_admin_gtid.test):
     def run(self):
         self.res_fname = "result.txt"
 
-        master_conn = self.build_connection_string(self.server1).strip(' ')
-        slave1_conn = self.build_connection_string(self.server2).strip(' ')
-        slave2_conn = self.build_connection_string(self.server3).strip(' ')
-        slave3_conn = self.build_connection_string(self.server4).strip(' ')
-        slave4_conn = self.build_connection_string(self.server5).strip(' ')
+        main_conn = self.build_connection_string(self.server1).strip(' ')
+        subordinate1_conn = self.build_connection_string(self.server2).strip(' ')
+        subordinate2_conn = self.build_connection_string(self.server3).strip(' ')
+        subordinate3_conn = self.build_connection_string(self.server4).strip(' ')
+        subordinate4_conn = self.build_connection_string(self.server5).strip(' ')
 
-        comment = "Test case 1 - No master"
+        comment = "Test case 1 - No main"
         cmd_str = "mysqlfailover.py " 
-        cmd_opts = " --discover-slaves-login=root:root"
+        cmd_opts = " --discover-subordinates-login=root:root"
         res = mutlib.System_test.run_test_case(self, 2, cmd_str+cmd_opts,
                                                comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        comment = "Test case 2 - No slaves or discover-slaves-login"
+        comment = "Test case 2 - No subordinates or discover-subordinates-login"
         cmd_str = "mysqlfailover.py " 
-        cmd_opts = " --master=root:root@localhost"
+        cmd_opts = " --main=root:root@localhost"
         res = mutlib.System_test.run_test_case(self, 2, cmd_str+cmd_opts,
                                                comment)
         if not res:
@@ -59,7 +59,7 @@ class test(rpl_admin_gtid.test):
 
         comment = "Test case 3 - Low value for interval."
         cmd_str = "mysqlfailover.py --interval=1" 
-        cmd_opts = " --master=root:root@localhost"
+        cmd_opts = " --main=root:root@localhost"
         res = mutlib.System_test.run_test_case(self, 2, cmd_str+cmd_opts,
                                                comment)
         if not res:
@@ -67,8 +67,8 @@ class test(rpl_admin_gtid.test):
 
         comment = "Test case 4 - elect mode but no candidates"
         cmd_str = "mysqlfailover.py " 
-        cmd_opts = " --master=root:root@localhost --failover-mode=elect "
-        cmd_opts += "--slaves=%s " % slave1_conn
+        cmd_opts = " --main=root:root@localhost --failover-mode=elect "
+        cmd_opts += "--subordinates=%s " % subordinate1_conn
         res = mutlib.System_test.run_test_case(self, 2, cmd_str+cmd_opts,
                                                comment)
         if not res:
@@ -77,8 +77,8 @@ class test(rpl_admin_gtid.test):
         # Test for missing --rpl-user
         
         # Add server5 to the topology
-        conn_str = " --slave=%s" % self.build_connection_string(self.server5)
-        conn_str += " --master=%s " % master_conn 
+        conn_str = " --subordinate=%s" % self.build_connection_string(self.server5)
+        conn_str += " --main=%s " % main_conn 
         cmd = "mysqlreplicate.py --rpl-user=rpl:rpl %s" % conn_str
         res = self.exec_util(cmd, self.res_fname)
         if res != 0:
@@ -86,39 +86,39 @@ class test(rpl_admin_gtid.test):
 
         comment = "Test case 5 - FILE/TABLE mix and missing --rpl-user"
         cmd_str = "mysqlfailover.py "        
-        cmd_opts = " --master=%s --log=a.txt" % master_conn
-        cmd_opts += " --slaves=%s " % ",".join([slave1_conn, slave2_conn,
-                                               slave3_conn, slave4_conn])
+        cmd_opts = " --main=%s --log=a.txt" % main_conn
+        cmd_opts += " --subordinates=%s " % ",".join([subordinate1_conn, subordinate2_conn,
+                                               subordinate3_conn, subordinate4_conn])
         res = mutlib.System_test.run_test_case(self, 1, cmd_str+cmd_opts,
                                                comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
         
-        # Now test to see what happens when master is listed as a slave
-        comment = "Test case 6 - Master listed as a slave - literal" 
+        # Now test to see what happens when main is listed as a subordinate
+        comment = "Test case 6 - Main listed as a subordinate - literal" 
         cmd_str = "mysqlfailover.py health "        
-        cmd_opts = " --master=%s " % master_conn
-        cmd_opts += " --slaves=%s " % ",".join([slave1_conn, slave2_conn,
-                                               slave3_conn, master_conn])
+        cmd_opts = " --main=%s " % main_conn
+        cmd_opts += " --subordinates=%s " % ",".join([subordinate1_conn, subordinate2_conn,
+                                               subordinate3_conn, main_conn])
         res = mutlib.System_test.run_test_case(self, 2, cmd_str+cmd_opts,
                                                comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        comment = "Test case 7 - Master listed as a slave - alias" 
+        comment = "Test case 7 - Main listed as a subordinate - alias" 
         cmd_str = "mysqlfailover.py health "        
-        cmd_opts = " --master=%s " % master_conn
-        cmd_opts += " --slaves=root:root@%s:%s " % \
+        cmd_opts = " --main=%s " % main_conn
+        cmd_opts += " --subordinates=root:root@%s:%s " % \
                     (socket.gethostname().split('.', 1)[0], self.server1.port)
         res = mutlib.System_test.run_test_case(self, 2, cmd_str+cmd_opts,
                                                comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        comment = "Test case 8 - Master listed as a candiate - alias" 
+        comment = "Test case 8 - Main listed as a candiate - alias" 
         cmd_str = "mysqlfailover.py health "        
-        cmd_opts = " --master=%s " % master_conn
-        cmd_opts += " --slaves=%s " % ",".join([slave1_conn, slave2_conn])
+        cmd_opts = " --main=%s " % main_conn
+        cmd_opts += " --subordinates=%s " % ",".join([subordinate1_conn, subordinate2_conn])
         cmd_opts += " --candidates=root:root@%s:%s " % \
                     (socket.gethostname().split('.', 1)[0], self.server1.port)
         res = mutlib.System_test.run_test_case(self, 2, cmd_str+cmd_opts,

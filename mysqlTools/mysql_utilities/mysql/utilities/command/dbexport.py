@@ -420,21 +420,21 @@ def export_data(source, src_val, db_list, options):
     return True
 
 
-def get_change_master_command(source, options={}):
+def get_change_main_command(source, options={}):
     """Get the CHANGE MASTER command for export or copy of databases
     
     This method creates the replication commands based on the options chosen.
-    This includes the stop and start slave commands as well as the change
-    master command as follows.
+    This includes the stop and start subordinate commands as well as the change
+    main command as follows.
     
     To create the CHANGE MASTER command for connecting to the existing server
-    as the master, set rpl_mode = 'master'.
+    as the main, set rpl_mode = 'main'.
     
     To create the CHANGE MASTER command for using the existing server as the
-    master, set rpl_mode = 'master'.
+    main, set rpl_mode = 'main'.
     
     You can also get both CHANGE MASTER commands by setting rpl_mode = 'both'.
-    In this case, the second change master command (rpl_mode = 'slave') will
+    In this case, the second change main command (rpl_mode = 'subordinate') will
     be commented out.
     
     The method also checks the rpl_file option. If a file name is provided, it
@@ -450,7 +450,7 @@ def get_change_master_command(source, options={}):
     performed in that method as follows. See the negotiate_rpl_connection
     method documentation for complete specifics.
     
-      - binary log must be ON for a master
+      - binary log must be ON for a main
       - the rpl_user must exist   
             
     source[in]         Server instance
@@ -465,7 +465,7 @@ def get_change_master_command(source, options={}):
     rpl_cmds = []
     
     rpl_filename = options.get("rpl_file", None)
-    rpl_mode = options.get("rpl_mode", "master")
+    rpl_mode = options.get("rpl_mode", "main")
     quiet = options.get("quiet", False)
     
     # Check for rpl_file and empty it
@@ -479,50 +479,50 @@ def get_change_master_command(source, options={}):
         rf.close()
 
     strict = rpl_mode == 'both' or options.get("strict", False)
-    # Get change master as if this server was a master
-    if rpl_mode in ["master", "both"]:
+    # Get change main as if this server was a main
+    if rpl_mode in ["main", "both"]:
         
         if not quiet:
-            rpl_cmds.append("# Connecting to the current server as master")
+            rpl_cmds.append("# Connecting to the current server as main")
             
-        change_master = negotiate_rpl_connection(source, True, strict, options)
+        change_main = negotiate_rpl_connection(source, True, strict, options)
 
-        rpl_cmds.extend(change_master)
+        rpl_cmds.extend(change_main)
 
-    # Get change master using this slave's master information            
-    if rpl_mode in ["slave", "both"]:
+    # Get change main using this subordinate's main information            
+    if rpl_mode in ["subordinate", "both"]:
 
         if not quiet:
-            rpl_cmds.append("# Connecting to the current server's master")
+            rpl_cmds.append("# Connecting to the current server's main")
         
-        change_master = negotiate_rpl_connection(source, False, strict, options)
+        change_main = negotiate_rpl_connection(source, False, strict, options)
             
-        rpl_cmds.extend(change_master)
+        rpl_cmds.extend(change_main)
     
     return (rpl_cmds, rpl_file)
 
 
-def get_gtid_commands(master, options):
+def get_gtid_commands(main, options):
     """Get the GTID commands for beginning and ending operations
         
     This method returns those commands needed at the start of an export/copy
     operation (turn off session binlog, setting GTIDs) and those needed at
     the end of an export/copy operation (turn on binlog sesson).
     
-    master[in]         Master connection information
+    main[in]         Main connection information
     
     Returns tuple - ([],"") = list of commands for start, command for end or
                               None if GTIDs are not enabled.
     """
-    if not master.supports_gtid() == "ON":
+    if not main.supports_gtid() == "ON":
         return None
-    rows = master.exec_query(_GET_GTID_EXECUTED)
-    master_gtids_list = ["%s" % row[0] for row in rows]
-    master_gtids = ",".join(master_gtids_list)
-    if len(master_gtids_list) == 1 and rows[0][0] == '':
+    rows = main.exec_query(_GET_GTID_EXECUTED)
+    main_gtids_list = ["%s" % row[0] for row in rows]
+    main_gtids = ",".join(main_gtids_list)
+    if len(main_gtids_list) == 1 and rows[0][0] == '':
         return None
     return ([_SESSION_BINLOG_OFF1, _SESSION_BINLOG_OFF2,
-             _SET_GTID_PURGED % master_gtids], _SESSION_BINLOG_ON)
+             _SET_GTID_PURGED % main_gtids], _SESSION_BINLOG_ON)
     
 
 def write_commands(file, rows, options):
@@ -553,7 +553,7 @@ def write_commands(file, rows, options):
 
     # calculate comment character
     if options.get("comment_rpl", False) or \
-       options.get("rpl_mode", "master") == "both":
+       options.get("rpl_mode", "main") == "both":
         prefix_str = "# "
     else:
         prefix_str = ""
@@ -594,7 +594,7 @@ def export_databases(server_values, db_list, options):
     from mysql.utilities.common.server import connect_servers
 
     export = options.get("export", "definitions")
-    rpl_mode = options.get("rpl_mode", "master")
+    rpl_mode = options.get("rpl_mode", "main")
     quiet = options.get("quiet", False)
     verbosity = options.get("verbosity", 0)
     locking = options.get("locking", "snapshot")
@@ -636,7 +636,7 @@ def export_databases(server_values, db_list, options):
     # if --rpl specified, write initial replication command
     rpl_info = None
     if rpl_mode:
-        rpl_info = get_change_master_command(source, options)
+        rpl_info = get_change_main_command(source, options)
         write_commands(rpl_info[_RPL_FILE], ["STOP SLAVE;"], options)
 
     # if GTIDs enabled and user requested the output, write the GTID commands

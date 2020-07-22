@@ -20,17 +20,17 @@ import rpl_admin
 import rpl_admin_gtid
 from mysql.utilities.exception import MUTLibError
 
-_DEFAULT_MYSQL_OPTS = ('"--log-bin=mysql-bin --skip-slave-start '
-                       '--log-slave-updates --gtid-mode=on '
+_DEFAULT_MYSQL_OPTS = ('"--log-bin=mysql-bin --skip-subordinate-start '
+                       '--log-subordinate-updates --gtid-mode=on '
                        '--enforce-gtid-consistency --report-host=localhost '
                        '--report-port=%s '
-                       '--sync-master-info=1 --master-info-repository=table"')
+                       '--sync-main-info=1 --main-info-repository=table"')
 
-_DEFAULT_MYSQL_OPTS_FILE = ('"--log-bin=mysql-bin --skip-slave-start '
-                            '--log-slave-updates --gtid-mode=on '
+_DEFAULT_MYSQL_OPTS_FILE = ('"--log-bin=mysql-bin --skip-subordinate-start '
+                            '--log-subordinate-updates --gtid-mode=on '
                             '--enforce-gtid-consistency '
                             '--report-host=localhost --report-port=%s --sync'
-                            '-master-info=1 --master-info-repository=file"')
+                            '-main-info=1 --main-info-repository=file"')
 
 
 class test(rpl_admin_gtid.test):
@@ -55,9 +55,9 @@ class test(rpl_admin_gtid.test):
 
         test_num = 1
 
-        master_conn = self.build_connection_string(self.server1).strip(' ')
-        slave2_conn = self.build_connection_string(self.server3).strip(' ')
-        slave3_conn = self.build_connection_string(self.server4).strip(' ')
+        main_conn = self.build_connection_string(self.server1).strip(' ')
+        subordinate2_conn = self.build_connection_string(self.server3).strip(' ')
+        subordinate3_conn = self.build_connection_string(self.server4).strip(' ')
 
         # Remove GTIDs here because they are not deterministic when run with
         # other tests that reuse these servers.
@@ -67,12 +67,12 @@ class test(rpl_admin_gtid.test):
         self.remove_result("localhost,%s,SLAVE," % self.s3_port)
 
         comment = "Test case %s - test failover scripts" % test_num
-        slaves = ",".join(["root:root@127.0.0.1:%s" % self.server2.port,
-                           slave2_conn, slave3_conn])
+        subordinates = ",".join(["root:root@127.0.0.1:%s" % self.server2.port,
+                           subordinate2_conn, subordinate3_conn])
         script = os.path.join(os.getcwd(), "std_data/show_arguments.sh")
-        command = " ".join(["mysqlrpladmin.py --master=%s " % master_conn,
-                            "--candidates=%s  " % slave3_conn,
-                            "--slaves=%s failover" % slaves,
+        command = " ".join(["mysqlrpladmin.py --main=%s " % main_conn,
+                            "--candidates=%s  " % subordinate3_conn,
+                            "--subordinates=%s failover" % subordinates,
                             "--exec-before=%s" % script,
                             "--exec-after=%s" % script, "-vvv"])
         res = mutlib.System_test.run_test_case(self, 0, command, comment)
@@ -84,11 +84,11 @@ class test(rpl_admin_gtid.test):
         rpl_admin_gtid.test.reset_topology(self)
 
         comment = "Test case %s - test switchover scripts" % test_num
-        command = " ".join(["mysqlrpladmin.py --master=%s " % master_conn,
-                            "--new-master=%s  " % slave3_conn, "switchover",
-                            "--exec-before=%s" % script, "--demote-master",
+        command = " ".join(["mysqlrpladmin.py --main=%s " % main_conn,
+                            "--new-main=%s  " % subordinate3_conn, "switchover",
+                            "--exec-before=%s" % script, "--demote-main",
                             "--exec-after=%s" % script, "-vvv",
-                            "--slaves=%s" % slaves])
+                            "--subordinates=%s" % subordinates])
         res = mutlib.System_test.run_test_case(self, 0, command, comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)

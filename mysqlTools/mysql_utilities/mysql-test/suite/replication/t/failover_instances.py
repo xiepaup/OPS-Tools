@@ -91,26 +91,26 @@ class test(failover.test):
     def run(self):
         self.res_fname = "result.txt"
         
-        master_conn = self.build_connection_string(self.server1).strip(' ')
-        slave1_conn = self.build_connection_string(self.server2).strip(' ')
-        slave2_conn = self.build_connection_string(self.server3).strip(' ')
-        slave3_conn = self.build_connection_string(self.server4).strip(' ')
+        main_conn = self.build_connection_string(self.server1).strip(' ')
+        subordinate1_conn = self.build_connection_string(self.server2).strip(' ')
+        subordinate2_conn = self.build_connection_string(self.server3).strip(' ')
+        subordinate3_conn = self.build_connection_string(self.server4).strip(' ')
         
-        master_str = "--master=" + master_conn
-        slaves_str = "--slaves=" + \
-                     ",".join([slave1_conn, slave2_conn, slave3_conn])
+        main_str = "--main=" + main_conn
+        subordinates_str = "--subordinates=" + \
+                     ",".join([subordinate1_conn, subordinate2_conn, subordinate3_conn])
         candidates_str = "--candidates=" + \
-                         ",".join([slave1_conn, slave2_conn, slave3_conn])
+                         ",".join([subordinate1_conn, subordinate2_conn, subordinate3_conn])
         
         failover_cmd = "python ../scripts/mysqlfailover.py --interval=15 " + \
-                       " --discover-slaves-login=root:root --failover-" + \
+                       " --discover-subordinates-login=root:root --failover-" + \
                        "mode=%s --log=%s %s "
-        failover_cmd1 = failover_cmd % ("auto", "a" + _FAILOVER_LOG, master_str)
-        failover_cmd2 = failover_cmd % ("auto", "b" + _FAILOVER_LOG, master_str)
-        failover_cmd3 = failover_cmd % ("elect", "c" + _FAILOVER_LOG, master_str)
-        failover_cmd3 += " --candidate=%s" % slave1_conn
+        failover_cmd1 = failover_cmd % ("auto", "a" + _FAILOVER_LOG, main_str)
+        failover_cmd2 = failover_cmd % ("auto", "b" + _FAILOVER_LOG, main_str)
+        failover_cmd3 = failover_cmd % ("elect", "c" + _FAILOVER_LOG, main_str)
+        failover_cmd3 += " --candidate=%s" % subordinate1_conn
         failover_cmd4 = failover_cmd % ("auto", "d" + _FAILOVER_LOG,
-                                        "--master="+slave2_conn)
+                                        "--main="+subordinate2_conn)
         
         # We launch one console, wait for interval, then start another,
         # wait for interval, then kill both, and finally check log of each
@@ -155,7 +155,7 @@ class test(failover.test):
         proc3, f_out3 = failover.test.start_process(self, failover_cmd3)
         self._poll_console(True, "third", proc3, comment)
 
-        # Now, kill the master - wha-ha-ha!
+        # Now, kill the main - wha-ha-ha!
         res = self.server1.show_server_variable('pid_file')
         pid_file = open(res[0][1])
         pid = int(pid_file.readline().strip('\n'))

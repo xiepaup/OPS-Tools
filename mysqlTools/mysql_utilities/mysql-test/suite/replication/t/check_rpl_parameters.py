@@ -21,7 +21,7 @@ from mysql.utilities.exception import MUTLibError
 
 class test(check_rpl.test):
     """check replication conditions
-    This test runs the mysqlrplcheck utility on a known master-slave topology
+    This test runs the mysqlrplcheck utility on a known main-subordinate topology
     to test various parameters. It uses the check_rpl test as a parent for
     setup and teardown methods.
     """
@@ -31,23 +31,23 @@ class test(check_rpl.test):
 
     def setup(self):
         res = check_rpl.test.setup(self)
-        index = self.servers.find_server_by_name("rep_slave_ignore")
+        index = self.servers.find_server_by_name("rep_subordinate_ignore")
         if index >= 0:
             self.server3 = self.servers.get_server(index)
             try:
                 res = self.server3.show_server_variable("server_id")
             except MUTLibError, e:
-                raise MUTLibError("Cannot get replication slave " +
+                raise MUTLibError("Cannot get replication subordinate " +
                                    "server_id: %s" % e.errmsg)
             self.s3_serverid = int(res[0][1])
         else:
             self.s3_serverid = self.servers.get_next_id()
             res = self.servers.spawn_new_server(self.server0, self.s3_serverid,
-                                               "rep_slave_ignore", ' --mysqld='
+                                               "rep_subordinate_ignore", ' --mysqld='
                                                 '"--log-bin=mysql-bin '
                                                 '--replicate-ignore-db=t123"')
             if not res:
-                raise MUTLibError("Cannot spawn replication slave server.")
+                raise MUTLibError("Cannot spawn replication subordinate server.")
             self.server3 = res[0]
             self.servers.add_new_server(self.server3, True)
         return res
@@ -55,11 +55,11 @@ class test(check_rpl.test):
     def run(self):
         self.res_fname = "result.txt"
 
-        master_str = "--master=%s" % self.build_connection_string(self.server2)
-        slave_str = " --slave=%s" % self.build_connection_string(self.server1)
-        slave_ignore_str = " --slave=%s" % \
+        main_str = "--main=%s" % self.build_connection_string(self.server2)
+        subordinate_str = " --subordinate=%s" % self.build_connection_string(self.server1)
+        subordinate_ignore_str = " --subordinate=%s" % \
                            self.build_connection_string(self.server3)
-        conn_str = master_str + slave_str
+        conn_str = main_str + subordinate_str
         
         cmd = "mysqlreplicate.py --rpl-user=rpl:rpl %s" % conn_str
         try:
@@ -76,8 +76,8 @@ class test(check_rpl.test):
         if not res:
             raise MUTLibError("%s: failed" % comment)
             
-        comment = "Test case 2 - master_info"
-        cmd_opts = " --master-info=m.info -v"
+        comment = "Test case 2 - main_info"
+        cmd_opts = " --main-info=m.info -v"
         res = mutlib.System_test.run_test_case(self, 1, cmd_str+cmd_opts,
                                                    comment)
         if not res:
@@ -98,7 +98,7 @@ class test(check_rpl.test):
             raise MUTLibError("%s: failed" % comment)
 
         comment = "Test case 5 - test failure with quiet"
-        cmd_opts = " --master-info=m.info --quiet"
+        cmd_opts = " --main-info=m.info --quiet"
         res = mutlib.System_test.run_test_case(self, 1, cmd_str+cmd_opts,
                                                    comment)
         if not res:
@@ -106,7 +106,7 @@ class test(check_rpl.test):
             
         # Now show how quiet performs with warning and suppress
         
-        conn_str = master_str + slave_ignore_str
+        conn_str = main_str + subordinate_ignore_str
         cmd_str = "mysqlrplcheck.py " + conn_str
         
         cmd = "mysqlreplicate.py --rpl-user=rpl:rpl %s" % conn_str

@@ -18,7 +18,7 @@
 
 """
 This file contains the replicate utility. It is used to establish a
-master/slave replication topology among two servers.
+main/subordinate replication topology among two servers.
 """
 
 from mysql.utilities.common.tools import check_python_version
@@ -39,8 +39,8 @@ from mysql.utilities.exception import UtilError
 
 # Constants
 NAME = "MySQL Utilities - mysqlreplicate "
-DESCRIPTION = "mysqlreplicate - establish replication with a master"
-USAGE = "%prog --master=root@localhost:3306 --slave=root@localhost:3310 " \
+DESCRIPTION = "mysqlreplicate - establish replication with a main"
+USAGE = "%prog --main=root@localhost:3306 --subordinate=root@localhost:3310 " \
         "--rpl-user=rpl:passwd "
 
 # Setup the command parser
@@ -50,16 +50,16 @@ parser = setup_common_options(os.path.basename(sys.argv[0]),
 # Setup utility-specific options:
 
 # Connection information for the source server
-parser.add_option("--master", action="store", dest="master",
+parser.add_option("--main", action="store", dest="main",
                   type = "string", default="root@localhost:3306",
-                  help="connection information for master server in " + \
+                  help="connection information for main server in " + \
                   "the form: <user>[:<password>]@<host>[:<port>][:<socket>] or"
                   " <login-path>[:<port>][:<socket>].")
 
 # Connection information for the destination server
-parser.add_option("--slave", action="store", dest="slave",
+parser.add_option("--subordinate", action="store", dest="subordinate",
                   type = "string", default=None,
-                  help="connection information for slave server in " + \
+                  help="connection information for subordinate server in " + \
                   "the form: <user>[:<password>]@<host>[:<port>][:<socket>] or"
                   " <login-path>[:<port>][:<socket>].")
 
@@ -69,29 +69,29 @@ add_rpl_user(parser)
 # Pedantic mode for failing if storage engines differ
 parser.add_option("-p", "--pedantic", action="store_true", default=False,
                   dest="pedantic", help="fail if storage engines differ "
-                  "among master and slave.")
+                  "among main and subordinate.")
 
 # Test replication option
 parser.add_option("--test-db", action="store", dest="test_db",
                   type = "string", help="database name to use in testing "
                          " replication setup (optional)")
 
-# Add master log file option
-parser.add_option("--master-log-file", action="store", dest="master_log_file",
-                  type="string", help="use this master log file to initiate "
-                  "the slave.", default=None)
+# Add main log file option
+parser.add_option("--main-log-file", action="store", dest="main_log_file",
+                  type="string", help="use this main log file to initiate "
+                  "the subordinate.", default=None)
 
-# Add master log position option
-parser.add_option("--master-log-pos", action="store", dest="master_log_pos",
-                  type="int", help="use this position in the master log file "
-                  "to initiate the slave.", default=-1)
+# Add main log position option
+parser.add_option("--main-log-pos", action="store", dest="main_log_pos",
+                  type="int", help="use this position in the main log file "
+                  "to initiate the subordinate.", default=-1)
 
 # Add start from beginning option
 parser.add_option("-b", "--start-from-beginning", action="store_true",
                   default=False, dest="from_beginning",
                   help="start replication from the first event recorded in "
-                  "the binary logging of the master."
-                  "Not valid with --master-log-file or --master-log-pos.")
+                  "the binary logging of the main."
+                  "Not valid with --main-log-file or --main-log-pos.")
 
 # Add verbosity
 add_verbosity(parser)
@@ -101,46 +101,46 @@ opt, args = parser.parse_args()
 
 # Parse source connection values
 try:
-    m_values = parse_connection(opt.master, None, opt)
+    m_values = parse_connection(opt.main, None, opt)
 except FormatError:
     _, err, _ = sys.exc_info()
-    parser.error("Master connection values invalid: %s." % err)
+    parser.error("Main connection values invalid: %s." % err)
 except UtilError:
     _, err, _ = sys.exc_info()
-    parser.error("Master connection values invalid: %s." % err.errmsg)
+    parser.error("Main connection values invalid: %s." % err.errmsg)
 
 
 # Parse source connection values
 try:
-    s_values = parse_connection(opt.slave, None, opt)
+    s_values = parse_connection(opt.subordinate, None, opt)
 except FormatError:
     _, err, _ = sys.exc_info()
-    parser.error("Slave connection values invalid: %s." % err)
+    parser.error("Subordinate connection values invalid: %s." % err)
 except UtilError:
     _, err, _ = sys.exc_info()
-    parser.error("Slave connection values invalid: %s." % err.errmsg)
+    parser.error("Subordinate connection values invalid: %s." % err.errmsg)
 
 # Check hostname alias
 if check_hostname_alias(m_values, s_values):
-    parser.error("The master and slave are the same host and port.")
+    parser.error("The main and subordinate are the same host and port.")
     
-# Check required --master-log-file for --master-log-pos
-if (opt.master_log_pos >= 0 and opt.master_log_file is None):
-    parser.error("You must specify a master log file to use the master "
+# Check required --main-log-file for --main-log-pos
+if (opt.main_log_pos >= 0 and opt.main_log_file is None):
+    parser.error("You must specify a main log file to use the main "
                  "log file position option.")
     
-if ((opt.master_log_pos >= 0) or (opt.master_log_file is not None)) and \
+if ((opt.main_log_pos >= 0) or (opt.main_log_file is not None)) and \
    opt.from_beginning:
     parser.error("The --start-from-beginning option is not valid in "
-                 "combination with --master-log-file or --master-log-pos.")
+                 "combination with --main-log-file or --main-log-pos.")
     
 # Create dictionary of options
 options = {
     'verbosity'       : opt.verbosity,
     'pedantic'        : opt.pedantic,
     'quiet'           : False,
-    'master_log_file' : opt.master_log_file,
-    'master_log_pos'  : opt.master_log_pos,
+    'main_log_file' : opt.main_log_file,
+    'main_log_pos'  : opt.main_log_pos,
     'from_beginning'  : opt.from_beginning,
 }
 

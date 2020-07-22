@@ -20,8 +20,8 @@ import failover
 import time
 from mysql.utilities.exception import MUTLibError
 
-_DEFAULT_MYSQL_OPTS = '"--log-bin=mysql-bin --skip-slave-start ' + \
-                      '--log-slave-updates --gtid-mode=on ' + \
+_DEFAULT_MYSQL_OPTS = '"--log-bin=mysql-bin --skip-subordinate-start ' + \
+                      '--log-subordinate-updates --gtid-mode=on ' + \
                       '--enforce-gtid-consistency --report-host=localhost ' + \
                       '--report-port=%s "'
 
@@ -29,7 +29,7 @@ _TIMEOUT = 30
 
 class test(failover.test):
     """test replication failover utility
-    This test exercises the mysqlfailover utility on slaves without passwords.
+    This test exercises the mysqlfailover utility on subordinates without passwords.
     """
 
     def check_prerequisites(self):
@@ -93,14 +93,14 @@ class test(failover.test):
         # Spawn servers
         self.server0 = self.servers.get_server(0)
         mysqld = _DEFAULT_MYSQL_OPTS % self.servers.view_next_port()
-        self.server1 = self._get_server("rep_master_no_pass", mysqld)
+        self.server1 = self._get_server("rep_main_no_pass", mysqld)
         mysqld = _DEFAULT_MYSQL_OPTS % self.servers.view_next_port()
-        self.server2 = self._get_server("rep_slave1_no_pass", mysqld)
+        self.server2 = self._get_server("rep_subordinate1_no_pass", mysqld)
 
-        self.master_str = "--master=%s" % \
+        self.main_str = "--main=%s" % \
                           self.build_connection_string(self.server1)
-        slave_str = " --slave=%s" % self.build_connection_string(self.server2)
-        conn_str = self.master_str + slave_str
+        subordinate_str = " --subordinate=%s" % self.build_connection_string(self.server2)
+        conn_str = self.main_str + subordinate_str
         cmd = "mysqlreplicate.py --rpl-user=rpl:rpl %s" % conn_str
         res = self.exec_util(cmd, self.res_fname)
         if res != 0:
@@ -112,14 +112,14 @@ class test(failover.test):
         import subprocess
         
         comment = "Test case 1 - No password test"
-        cmd_str = "mysqlrpladmin.py health %s %s" % (self.master_str, 
-                  " --discover-slaves-login=root")
+        cmd_str = "mysqlrpladmin.py health %s %s" % (self.main_str, 
+                  " --discover-subordinates-login=root")
         
         res = self.exec_util(cmd_str, self.res_fname)
         if res != 0:
             return False
 
-        # Test should show one master and one slave.
+        # Test should show one main and one subordinate.
         self.results = []
         file_out = open(self.res_fname, 'r')
         for line in file_out.readlines():

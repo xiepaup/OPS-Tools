@@ -20,7 +20,7 @@ from mysql.utilities.exception import MUTLibError
 
 class test(replicate.test):
     """setup replication
-    This test attempts to replicate among a master and slave whose
+    This test attempts to replicate among a main and subordinate whose
     innodb settings are different. It uses the replicate test for
     inherited methods.
     """
@@ -42,54 +42,54 @@ class test(replicate.test):
 
         replicate.test.setup(self)
         
-        index = self.servers.find_server_by_name("rep_slave_missing_engines")
+        index = self.servers.find_server_by_name("rep_subordinate_missing_engines")
         if index >= 0:
             self.server3 = self.servers.get_server(index)
             try:
                 res = self.server3.show_server_variable("server_id")
             except MUTLibError, e:
-                raise MUTLibError("Cannot get replication slave " +
+                raise MUTLibError("Cannot get replication subordinate " +
                                    "server_id: %s" % e.errmsg)
             self.s3_serverid = int(res[0][1])
         else:
             self.s3_serverid = self.servers.get_next_id()
             res = self.servers.spawn_new_server(self.server0, self.s3_serverid,
-                                                "rep_slave_missing_engines",
+                                                "rep_subordinate_missing_engines",
                                               ' --mysqld="--log-bin=mysql-bin '
                                          '--default_storage_engine=blackhole"')
             if not res:
-                raise MUTLibError("Cannot spawn replication slave server.")
+                raise MUTLibError("Cannot spawn replication subordinate server.")
             self.server3 = res[0]
             self.servers.add_new_server(self.server3, True)
             
-        index = self.servers.find_server_by_name("rep_master_missing_engines")
+        index = self.servers.find_server_by_name("rep_main_missing_engines")
         if index >= 0:
             self.server4 = self.servers.get_server(index)
             try:
                 res = self.server4.show_server_variable("server_id")
             except MUTLibError, e:
-                raise MUTLibError("Cannot get replication master " +
+                raise MUTLibError("Cannot get replication main " +
                                    "server_id: %s" % e.errmsg)
             self.s4_serverid = int(res[0][1])
         else:
             self.s4_serverid = self.servers.get_next_id()
             res = self.servers.spawn_new_server(self.server0, self.s4_serverid,
-                                               "rep_master_missing_engines",
+                                               "rep_main_missing_engines",
                                               ' --mysqld="--log-bin=mysql-bin '
                                             '--default_storage_engine=memory"')
             if not res:
-                raise MUTLibError("Cannot spawn replication slave server.")
+                raise MUTLibError("Cannot spawn replication subordinate server.")
             self.server4 = res[0]
             self.servers.add_new_server(self.server4, True)
 
         return True
     
-    def run_test_case(self, slave, master, s_id,
+    def run_test_case(self, subordinate, main, s_id,
                       comment, options=None, expected_result=0):
         
-        master_str = "--master=%s" % self.build_connection_string(master)
-        slave_str = " --slave=%s" % self.build_connection_string(slave)
-        conn_str = master_str + slave_str
+        main_str = "--main=%s" % self.build_connection_string(main)
+        subordinate_str = " --subordinate=%s" % self.build_connection_string(subordinate)
+        conn_str = main_str + subordinate_str
         
         # Test case 1 - setup replication among two servers
         self.results.append(comment+"\n")
@@ -106,14 +106,14 @@ class test(replicate.test):
     def run(self):
         self.res_fname = "result.txt"
         
-        comment = "Test case 1 - show warnings if slave has different " \
+        comment = "Test case 1 - show warnings if subordinate has different " \
                   "default engines"
         res = self.run_test_case(self.server3, self.server2, self.s3_serverid,
                                  comment, None)
         if not res:
             raise MUTLibError("%s: failed" % comment)
             
-        comment = "Test case 2 - use pedantic to fail if slave has " \
+        comment = "Test case 2 - use pedantic to fail if subordinate has " \
                   "different default engines"
         res = self.run_test_case(self.server3, self.server2, self.s3_serverid,
                                  comment, " --pedantic", 1)
@@ -123,17 +123,17 @@ class test(replicate.test):
         try:
             res = self.server3.exec_query("STOP SLAVE")
         except:
-            raise MUTLibError("%s: Failed to stop slave." % comment)
+            raise MUTLibError("%s: Failed to stop subordinate." % comment)
 
 
-        comment = "Test case 3 - show warnings if master has different " \
+        comment = "Test case 3 - show warnings if main has different " \
                   "default engines"
         res = self.run_test_case(self.server1, self.server4, self.s1_serverid,
                                  comment, None)
         if not res:
             raise MUTLibError("%s: failed" % comment)
         
-        comment = "Test case 4 - use pedantic to fail if master has " \
+        comment = "Test case 4 - use pedantic to fail if main has " \
                   "different default engines"
         res = self.run_test_case(self.server1, self.server4, self.s1_serverid,
                                  comment, " --pedantic", 1)
@@ -143,14 +143,14 @@ class test(replicate.test):
         try:
             res = self.server1.exec_query("STOP SLAVE")
         except:
-            raise MUTLibError("%s: Failed to stop slave." % comment)
+            raise MUTLibError("%s: Failed to stop subordinate." % comment)
 
         replicate.test.mask_results(self)
 
         # Mask out inconsistent results when run on slower machines
-        self.remove_result("# status: Queueing master event to the relay log")
+        self.remove_result("# status: Queueing main event to the relay log")
         self.remove_result("# error: 0:")
-        self.remove_result("# Waiting for slave to synchronize with master")
+        self.remove_result("# Waiting for subordinate to synchronize with main")
         
         return True
 
