@@ -18,10 +18,10 @@ import os
 import mutlib
 from mysql.utilities.exception import UtilError, MUTLibError
 
-_DEFAULT_MYSQL_OPTS = ('"--log-bin=mysql-bin --skip-slave-start '
-                       '--log-slave-updates --gtid-mode=on '
+_DEFAULT_MYSQL_OPTS = ('"--log-bin=mysql-bin --skip-subordinate-start '
+                       '--log-subordinate-updates --gtid-mode=on '
                        '--disable-gtid-unsafe-statements '
-                       '--sync-master-info=1 --master-info-repository=table"')
+                       '--sync-main-info=1 --main-info-repository=table"')
 
 
 class test(mutlib.System_test):

@@ -24,8 +24,8 @@ _MASTER_ALIASES = ['127.0.0.1', 'localhost']
 class test(mutlib.System_test):
     """setup replication
     This test executes a simple replication setup among two servers to check
-    the is_alias() method of the server class for comparing slave's master
-    host to the master's alias list.
+    the is_alias() method of the server class for comparing subordinate's main
+    host to the main's alias list.
     """
 
     def check_prerequisites(self):
@@ -38,41 +38,41 @@ class test(mutlib.System_test):
         self.s1_serverid = None
         self.s2_serverid = None
 
-        index = self.servers.find_server_by_name("rep_slave")
+        index = self.servers.find_server_by_name("rep_subordinate")
         if index >= 0:
             self.server1 = self.servers.get_server(index)
             try:
                 res = self.server1.show_server_variable("server_id")
             except MUTLibError, e:
-                raise MUTLibError("Cannot get replication slave " +
+                raise MUTLibError("Cannot get replication subordinate " +
                                    "server_id: %s" % e.errmsg)
             self.s1_serverid = int(res[0][1])
         else:
             self.s1_serverid = self.servers.get_next_id()
             res = self.servers.spawn_new_server(self.server0, self.s1_serverid,
-                                               "rep_slave", ' --mysqld='
+                                               "rep_subordinate", ' --mysqld='
                                                 '"--log-bin=mysql-bin "')
             if not res:
-                raise MUTLibError("Cannot spawn replication slave server.")
+                raise MUTLibError("Cannot spawn replication subordinate server.")
             self.server1 = res[0]
             self.servers.add_new_server(self.server1, True)
 
-        index = self.servers.find_server_by_name("rep_master")
+        index = self.servers.find_server_by_name("rep_main")
         if index >= 0:
             self.server2 = self.servers.get_server(index)
             try:
                 res = self.server2.show_server_variable("server_id")
             except MUTLibError, e:
-                raise MUTLibError("Cannot get replication master " +
+                raise MUTLibError("Cannot get replication main " +
                                    "server_id: %s" % e.errmsg)
             self.s2_serverid = int(res[0][1])
         else:
             self.s2_serverid = self.servers.get_next_id()
             res = self.servers.spawn_new_server(self.server0, self.s2_serverid,
-                                                "rep_master", ' --mysqld='
+                                                "rep_main", ' --mysqld='
                                                 '"--log-bin=mysql-bin "')
             if not res:
-                raise MUTLibError("Cannot spawn replication slave server.")
+                raise MUTLibError("Cannot spawn replication subordinate server.")
             self.server2 = res[0]
             self.servers.add_new_server(self.server2, True)
             
@@ -92,23 +92,23 @@ class test(mutlib.System_test):
 
         return True
     
-    def run_test_case(self, master_host, comment):
+    def run_test_case(self, main_host, comment):
         
         from mysql.utilities.common.server import Server
 
-        master_str = "--master=root:root@%s:%s" % (master_host, self.server2.port)
-        slave_str = " --slave=root:root@%s:%s" % (self.server1.host, self.server1.port)
-        conn_str = master_str + slave_str
+        main_str = "--main=root:root@%s:%s" % (main_host, self.server2.port)
+        subordinate_str = " --subordinate=root:root@%s:%s" % (self.server1.host, self.server1.port)
+        conn_str = main_str + subordinate_str
         
         if self.debug:
             print comment
             
-        # Stop and reset the slave
+        # Stop and reset the subordinate
         try:
             res = self.server1.exec_query("STOP SLAVE")
             res = self.server1.exec_query("RESET SLAVE")
         except:
-            raise MUTLibError("%s: Failed to stop/reset slave." % comment)
+            raise MUTLibError("%s: Failed to stop/reset subordinate." % comment)
 
         # Setup replication
         self.results.append(comment+'\n')
@@ -136,7 +136,7 @@ class test(mutlib.System_test):
         
         test_num = 1
         for alias in _MASTER_ALIASES:
-            comment = "Test case %s - master as %s." % (test_num, alias)
+            comment = "Test case %s - main as %s." % (test_num, alias)
             res = self.run_test_case(alias, comment)
             if not res:
                 raise MUTLibError("%s: failed" % comment)

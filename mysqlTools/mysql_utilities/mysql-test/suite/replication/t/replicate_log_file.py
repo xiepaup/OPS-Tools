@@ -28,8 +28,8 @@ _EXPECTED_RESULTS = [
 
 class test(replicate.test):
     """check parameters for the replicate utility
-    This test executes the replicate utility to exercise the master log file
-    and master log position options. It uses the replicate test as a parent
+    This test executes the replicate utility to exercise the main log file
+    and main log position options. It uses the replicate test as a parent
     for testing methods.
     """
 
@@ -37,7 +37,7 @@ class test(replicate.test):
     # test cases for (2)-(4) since (1) is covered in the existing replicate*
     # tests.
     # 
-    #   1) Start replication from current location of master log file
+    #   1) Start replication from current location of main log file
     #
     #   2) Start replication from the beginning (no log file info passed to CM)
     #
@@ -50,58 +50,58 @@ class test(replicate.test):
         self.check_gtid_unsafe()
         return replicate.test.check_prerequisites(self)
         
-    def stop_slave(self, comment, slave):
-        # Stop and flush the slave to disconnect are reset
+    def stop_subordinate(self, comment, subordinate):
+        # Stop and flush the subordinate to disconnect are reset
         try:
-            res = slave.exec_query("STOP SLAVE")
-            res = slave.exec_query("RESET SLAVE")
+            res = subordinate.exec_query("STOP SLAVE")
+            res = subordinate.exec_query("RESET SLAVE")
         except:
-            raise MUTLibError("%s: Cannot stop and reset slave." % comment)
+            raise MUTLibError("%s: Cannot stop and reset subordinate." % comment)
 
     def setup(self):
-        self.master_log_info = []
+        self.main_log_info = []
 
-        # Setup master and slave 
+        # Setup main and subordinate 
         self.server0 = self.servers.get_server(0)
         self.server1 = None
         self.server2 = None
         self.s1_serverid = None
         self.s2_serverid = None
 
-        index = self.servers.find_server_by_name("rep_slave_log")
+        index = self.servers.find_server_by_name("rep_subordinate_log")
         if index >= 0:
             self.server1 = self.servers.get_server(index)
             try:
                 res = self.server1.show_server_variable("server_id")
             except MUTLibError, e:
-                raise MUTLibError("Cannot get replication slave " +
+                raise MUTLibError("Cannot get replication subordinate " +
                                    "server_id: %s" % e.errmsg)
             self.s1_serverid = int(res[0][1])
         else:
             self.s1_serverid = self.servers.get_next_id()
             res = self.servers.spawn_new_server(self.server0, self.s1_serverid,
-                                               "rep_slave_log")
+                                               "rep_subordinate_log")
             if not res:
-                raise MUTLibError("Cannot spawn replication slave server.")
+                raise MUTLibError("Cannot spawn replication subordinate server.")
             self.server1 = res[0]
             self.servers.add_new_server(self.server1, True)
 
-        index = self.servers.find_server_by_name("rep_master")
+        index = self.servers.find_server_by_name("rep_main")
         if index >= 0:
             self.server2 = self.servers.get_server(index)
             try:
                 res = self.server2.show_server_variable("server_id")
             except MUTLibError, e:
-                raise MUTLibError("Cannot get replication master " +
+                raise MUTLibError("Cannot get replication main " +
                                    "server_id: %s" % e.errmsg)
             self.s2_serverid = int(res[0][1])
         else:
             self.s2_serverid = self.servers.get_next_id()
             res = self.servers.spawn_new_server(self.server0, self.s2_serverid,
-                                                "rep_master", ' --mysqld='
+                                                "rep_main", ' --mysqld='
                                                 '"--log-bin=mysql-bin "')
             if not res:
-                raise MUTLibError("Cannot spawn replication slave server.")
+                raise MUTLibError("Cannot spawn replication subordinate server.")
             self.server2 = res[0]
             self.servers.add_new_server(self.server2, True)
         
@@ -116,7 +116,7 @@ class test(replicate.test):
         except MUTLibError, e:
             raise MUTLibError("Failed to create the test database.")
 
-        # Populate with rows and save master log and position
+        # Populate with rows and save main log and position
         if not self.insert_row_rotate(("001a", "001b", "001c")):
             return False
         if not self.insert_row_rotate(("002a", "002b")):
@@ -125,35 +125,35 @@ class test(replicate.test):
         return True
 
     def insert_row_rotate(self, rows):
-        # Insert a row, rotate the logs, and save master position, repeat
+        # Insert a row, rotate the logs, and save main position, repeat
         try:
             for row in rows:
                 res = self.server2.exec_query('INSERT INTO log_test.t1 '
                                               'VALUES ("%s")' % row)
                 res = self.server2.exec_query("SHOW MASTER STATUS")
                 if res and not res == []:
-                    self.master_log_info.append((res[0][0], res[0][1]))
+                    self.main_log_info.append((res[0][0], res[0][1]))
             res = self.server2.exec_query("FLUSH LOGS")
         except UtilError, e:
             return False
         return True
     
     def get_table_rows(self, comment):
-        # Get list of rows from the slave
+        # Get list of rows from the subordinate
         try:
             res = self.server1.exec_query("SELECT * FROM log_test.t1")
             self.results.append(res)
         except UtilError, e:
             raise MUTLibError("%s: Query failed. %s" % (comment, e.errmsg))
     
-    def wait_for_slave(self, attempts):
-        # Wait for slave to read the master log file
+    def wait_for_subordinate(self, attempts):
+        # Wait for subordinate to read the main log file
         i = 0
         while i < attempts:
             try:
                 res = self.server1.exec_query("SHOW SLAVE STATUS")
                 if res:
-                    if res[0] == 'Waiting for master to send event':
+                    if res[0] == 'Waiting for main to send event':
                         return
             except:
                 return
@@ -168,13 +168,13 @@ class test(replicate.test):
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        self.wait_for_slave(10)
+        self.wait_for_subordinate(10)
 
         # Record the results
         self.get_table_rows(comment)
         
-        # Stop slave
-        self.stop_slave(comment, self.server1)
+        # Stop subordinate
+        self.stop_subordinate(comment, self.server1)
 
         return True
 
@@ -187,14 +187,14 @@ class test(replicate.test):
         self.server1.exec_query("DELETE FROM log_test.t1")
 
         self.run_and_record_test("Test case 2 - start from specific log, pos",
-                            "--master-log-file=%s --master-log-pos=%s --quiet" % 
-                            self.master_log_info[1])
+                            "--main-log-file=%s --main-log-pos=%s --quiet" % 
+                            self.main_log_info[1])
 
         self.server1.exec_query("DELETE FROM log_test.t1")
 
         self.run_and_record_test("Test case 3 - start at start of specific log",
-                            "--master-log-file=%s --quiet" % 
-                            self.master_log_info[3][0])
+                            "--main-log-file=%s --quiet" % 
+                            self.main_log_info[3][0])
 
         if self.debug:
             i = 0

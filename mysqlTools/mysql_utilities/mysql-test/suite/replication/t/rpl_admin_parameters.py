@@ -48,14 +48,14 @@ class test(rpl_admin.test):
         base_cmd = "mysqlrpladmin.py --ping=5 --timeout=7 --rpl-user=rpl:rpl " + \
                    "--seconds-behind=30 --max-position=100 "
 
-        master_conn = self.build_connection_string(self.server1).strip(' ')
-        slave1_conn = self.build_connection_string(self.server2).strip(' ')
-        slave2_conn = self.build_connection_string(self.server3).strip(' ')
-        slave3_conn = self.build_connection_string(self.server4).strip(' ')
+        main_conn = self.build_connection_string(self.server1).strip(' ')
+        subordinate1_conn = self.build_connection_string(self.server2).strip(' ')
+        subordinate2_conn = self.build_connection_string(self.server3).strip(' ')
+        subordinate3_conn = self.build_connection_string(self.server4).strip(' ')
         
-        master_str = "--master=" + master_conn
-        slaves_str = "--slaves=" + \
-                     ",".join([slave1_conn, slave2_conn, slave3_conn])
+        main_str = "--main=" + main_conn
+        subordinates_str = "--subordinates=" + \
+                     ",".join([subordinate1_conn, subordinate2_conn, subordinate3_conn])
 
         comment = "Test case 1 - show help"
         cmd_str = base_cmd + " --help"
@@ -63,9 +63,9 @@ class test(rpl_admin.test):
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        comment = "Test case 2 - test slave discovery"
-        cmd_str = "%s %s " % (base_cmd, master_str) 
-        cmd_opts = " --discover-slaves-login=root:root health"
+        comment = "Test case 2 - test subordinate discovery"
+        cmd_str = "%s %s " % (base_cmd, main_str) 
+        cmd_opts = " --discover-subordinates-login=root:root health"
         res = mutlib.System_test.run_test_case(self, 0, cmd_str+cmd_opts,
                                                comment)
         if not res:
@@ -75,18 +75,18 @@ class test(rpl_admin.test):
                                 "'rpl'@'localhost' IDENTIFIED BY 'rpl'")
         
         comment = "Test case 3 - switchover with verbosity"
-        cmd_str = "%s %s " % (base_cmd, master_str)
-        cmd_opts = " --discover-slaves-login=root:root --verbose switchover "
-        cmd_opts += " --demote-master --no-health --new-master=%s" % slave1_conn
+        cmd_str = "%s %s " % (base_cmd, main_str)
+        cmd_opts = " --discover-subordinates-login=root:root --verbose switchover "
+        cmd_opts += " --demote-main --no-health --new-main=%s" % subordinate1_conn
         res = mutlib.System_test.run_test_case(self, 0, cmd_str+cmd_opts,
                                                comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
         comment = "Test case 4 - switchover with quiet"
-        cmd_str = "%s --master=%s " % (base_cmd, slave1_conn)
-        cmd_opts = " --discover-slaves-login=root:root --quiet switchover "
-        cmd_opts += " --demote-master --new-master=%s" % master_conn
+        cmd_str = "%s --main=%s " % (base_cmd, subordinate1_conn)
+        cmd_opts = " --discover-subordinates-login=root:root --quiet switchover "
+        cmd_opts += " --demote-main --new-main=%s" % main_conn
         cmd_opts += " --log=%s --log-age=1 " % _LOGNAME
         res = mutlib.System_test.run_test_case(self, 0, cmd_str+cmd_opts,
                                                comment)
@@ -110,9 +110,9 @@ class test(rpl_admin.test):
         log_file.close()
         
         comment = "Test case 5 - switchover with logs"
-        cmd_str = "%s %s " % (base_cmd, master_str)
-        cmd_opts = " --discover-slaves-login=root:root switchover "
-        cmd_opts += " --demote-master --new-master=%s " % slave1_conn
+        cmd_str = "%s %s " % (base_cmd, main_str)
+        cmd_opts = " --discover-subordinates-login=root:root switchover "
+        cmd_opts += " --demote-main --new-main=%s " % subordinate1_conn
         cmd_opts += " --log=%s --log-age=1 " % _LOGNAME
         res = mutlib.System_test.run_test_case(self, 0, cmd_str+cmd_opts,
                                                comment)
@@ -132,20 +132,20 @@ class test(rpl_admin.test):
             pass
         
         comment = "Test case 6 - attempt risky switchover without force"
-        cmd_str = "%s --master=%s " % (base_cmd, slave2_conn)
-        new_slaves = " --slaves=" + ",".join([master_conn, slave1_conn, slave3_conn])
-        cmd_opts = new_slaves + " switchover "
-        cmd_opts += " --new-master=%s " % slave2_conn
+        cmd_str = "%s --main=%s " % (base_cmd, subordinate2_conn)
+        new_subordinates = " --subordinates=" + ",".join([main_conn, subordinate1_conn, subordinate3_conn])
+        cmd_opts = new_subordinates + " switchover "
+        cmd_opts += " --new-main=%s " % subordinate2_conn
         res = mutlib.System_test.run_test_case(self, 0, cmd_str+cmd_opts,
                                                comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
         comment = "Test case 7 - attempt risky switchover with --force"
-        cmd_str = "%s --master=%s --force " % (base_cmd, slave2_conn)
-        new_slaves = " --slaves=" + ",".join([master_conn, slave1_conn, slave3_conn])
-        cmd_opts = new_slaves + " switchover "
-        cmd_opts += " --new-master=%s " % slave2_conn
+        cmd_str = "%s --main=%s --force " % (base_cmd, subordinate2_conn)
+        new_subordinates = " --subordinates=" + ",".join([main_conn, subordinate1_conn, subordinate3_conn])
+        cmd_opts = new_subordinates + " switchover "
+        cmd_opts += " --new-main=%s " % subordinate2_conn
         res = mutlib.System_test.run_test_case(self, 0, cmd_str+cmd_opts,
                                                comment)
         if not res:

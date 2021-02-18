@@ -40,7 +40,7 @@ from mysql.utilities.common.my_print_defaults import my_login_config_path
 
 _PERMITTED_FORMATS = ["grid", "tab", "csv", "vertical"]
 _PERMITTED_DIFFS = ["unified", "context", "differ"]
-_PERMITTED_RPL_DUMP = ["master", "slave"]
+_PERMITTED_RPL_DUMP = ["main", "subordinate"]
 
 def prefix_check_choice(option, opt, value):
     """Check option values using case insensitive prefix compare
@@ -426,13 +426,13 @@ def add_rpl_mode(parser, do_both=True, add_file=True):
     rpl_mode_options = _PERMITTED_RPL_DUMP
     if do_both:
         rpl_mode_options.append("both")
-        rpl_mode_both = ", and 'both' = include 'master' and 'slave' " + \
+        rpl_mode_both = ", and 'both' = include 'main' and 'subordinate' " + \
                         "options where applicable"
     parser.add_option("--rpl", "--replication", dest="rpl_mode", action="store",
-                      help="include replication information. Choices = 'master'"
+                      help="include replication information. Choices = 'main'"
                       " = include the CHANGE MASTER command using source "
-                      "server as the master, 'slave' = include the CHANGE "
-                      "MASTER command using the destination server's master "
+                      "server as the main, 'subordinate' = include the CHANGE "
+                      "MASTER command using the destination server's main "
                       "information%s." % rpl_mode_both,
                       choices=rpl_mode_options)
     if add_file:
@@ -480,36 +480,36 @@ def add_failover_options(parser):
     This adds the following options:
 
       --candidates
-      --discover-slaves-login
+      --discover-subordinates-login
       --exec-after
       --exec-before
       --log
       --log-age
-      --master
+      --main
       --max-position
       --ping
       --seconds-behind
-      --slaves
+      --subordinates
       --timeout
 
     parser[in]        the parser instance
     """
     parser.add_option("--candidates", action="store", dest="candidates",
                       type="string", default=None,
-                      help="connection information for candidate slave servers"
+                      help="connection information for candidate subordinate servers"
                       " for failover in the form: <user>[:<password>]@<host>[:"
                       "<port>][:<socket>] or <login-path>[:<port>][:<socket>]."
-                      " Valid only with failover command. List multiple slaves"
+                      " Valid only with failover command. List multiple subordinates"
                       " in comma-separated list.")
 
-    parser.add_option("--discover-slaves-login", action="store", dest="discover",
+    parser.add_option("--discover-subordinates-login", action="store", dest="discover",
                       default=None, type="string", help="at startup, query "
-                      "master for all registered slaves and use the user name "
+                      "main for all registered subordinates and use the user name "
                       "and password specified to connect. Supply the user and "
                       "password in the form <user>[:<password>] or "
-                      "<login-path>. For example, --discover-slaves-login="
+                      "<login-path>. For example, --discover-subordinates-login="
                       "joe:secret will use 'joe' as the user and 'secret' as "
-                      "the password for each discovered slave.")
+                      "the password for each discovered subordinate.")
 
     parser.add_option("--exec-after", action="store", dest="exec_after",
                       default=None, type="string", help="name of script to "
@@ -528,51 +528,51 @@ def add_failover_options(parser):
                       "days. Entries older than this will be purged on startup. "
                       "Default = 7 days.")
 
-    parser.add_option("--master", action="store", dest="master", default=None,
-                      type="string", help="connection information for master "
+    parser.add_option("--main", action="store", dest="main", default=None,
+                      type="string", help="connection information for main "
                       "server in the form: <user>[:<password>]@<host>[:<port>]"
                       "[:<socket>] or <login-path>[:<port>][:<socket>]")
 
     parser.add_option("--max-position", action="store", dest="max_position",
-                      default=0, type="int", help="Used to detect slave "
-                      "delay. The maximum difference between the master's "
-                      "log position and the slave's reported read position of "
-                      "the master. A value greater than this means the slave "
-                      "is too far behind the master. Default is 0.")
+                      default=0, type="int", help="Used to detect subordinate "
+                      "delay. The maximum difference between the main's "
+                      "log position and the subordinate's reported read position of "
+                      "the main. A value greater than this means the subordinate "
+                      "is too far behind the main. Default is 0.")
 
     parser.add_option("--ping", action="store", dest="ping", default=None,
                       help="Number of ping attempts for detecting downed "
                       "server.")
 
     parser.add_option("--seconds-behind", action="store", dest="max_delay",
-                      default=0, type="int", help="Used to detect slave "
-                      "delay. The maximum number of seconds behind the master "
-                      "permitted before slave is considered behind the master. "
+                      default=0, type="int", help="Used to detect subordinate "
+                      "delay. The maximum number of seconds behind the main "
+                      "permitted before subordinate is considered behind the main. "
                       "Default is 0.")
 
-    parser.add_option("--slaves", action="store", dest="slaves",
+    parser.add_option("--subordinates", action="store", dest="subordinates",
                       type="string", default=None,
-                      help="connection information for slave servers in "
+                      help="connection information for subordinate servers in "
                       "the form: <user>[:<password>]@<host>[:<port>]"
                       "[:<socket>] or <login-path>[:<port>][:<socket>]. "
-                      "List multiple slaves in comma-separated list.")
+                      "List multiple subordinates in comma-separated list.")
 
     parser.add_option("--timeout", action="store", dest="timeout", default=300,
                       help="Maximum timeout in seconds to wait for each "
                       "replication command to complete. For example, timeout "
-                      "for slave waiting to catch up to master. "
+                      "for subordinate waiting to catch up to main. "
                       "Default = 300.")
 
 
-def check_server_lists(parser, master, slaves):
-    """Check to see if master is listed in slaves list
+def check_server_lists(parser, main, subordinates):
+    """Check to see if main is listed in subordinates list
 
-    Returns bool - True = master not in slaves, issue error if it appears
+    Returns bool - True = main not in subordinates, issue error if it appears
     """
-    if slaves:
-        for slave in slaves.split(',', 1):
-            if master == slave:
-                parser.error("You cannot list the master as a slave.")
+    if subordinates:
+        for subordinate in subordinates.split(',', 1):
+            if main == subordinate:
+                parser.error("You cannot list the main as a subordinate.")
 
     return True
 

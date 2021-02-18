@@ -42,9 +42,9 @@ class test(replicate.test):
         if not result:
             return False
         
-        master_str = "--master=%s" % self.build_connection_string(self.server1)
-        slave_str = " --slave=%s" % self.build_connection_string(self.server2)
-        conn_str = master_str + slave_str
+        main_str = "--main=%s" % self.build_connection_string(self.server1)
+        subordinate_str = " --subordinate=%s" % self.build_connection_string(self.server2)
+        conn_str = main_str + subordinate_str
         res = self.server2.exec_query("STOP SLAVE")
         res = self.server2.exec_query("RESET SLAVE")
         res = self.server1.exec_query("STOP SLAVE")
@@ -73,11 +73,11 @@ class test(replicate.test):
 
         cmd_str = "mysqldbexport.py util_test --export=both " + \
                   "--skip=events,grants,procedures,functions,views " + \
-                  "--rpl-user=rpl:rpl --rpl=master %s " % from_conn
+                  "--rpl-user=rpl:rpl --rpl=main %s " % from_conn
 
         test_num = 1
         for rpl_opt in _RPL_OPTIONS:
-            comment = "Test case %s : --rpl=master and %s" % \
+            comment = "Test case %s : --rpl=main and %s" % \
                       (test_num, rpl_opt)
             cmd_opts = "%s" % rpl_opt
             res = mutlib.System_test.run_test_case(self, 0,
@@ -86,7 +86,7 @@ class test(replicate.test):
             if not res:
                 raise MUTLibError("%s: failed" % comment)
             test_num += 1
-        comment = "Test case %s : --rpl=master and %s" % \
+        comment = "Test case %s : --rpl=main and %s" % \
                   (test_num, " ".join(_RPL_OPTIONS))
         cmd_opts = " %s" % " ".join(_RPL_OPTIONS)
         res = mutlib.System_test.run_test_case(self, 0, cmd_str + cmd_opts,

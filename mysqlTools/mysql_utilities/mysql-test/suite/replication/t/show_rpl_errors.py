@@ -21,7 +21,7 @@ from mysql.utilities.exception import UtilError, MUTLibError
 
 class test(show_rpl.test):
     """show replication topology - error testing
-    This test runs the mysqlrplshow utility on a known master-slave topology
+    This test runs the mysqlrplshow utility on a known main-subordinate topology
     with errors. It uses the show_rpl test as a parent for
     setup and teardown methods.
     """
@@ -31,10 +31,10 @@ class test(show_rpl.test):
 
     def setup(self):
         self.server_list[0] = self.servers.get_server(0)
-        self.server_list[1] = self.get_server("rep_slave_show")
+        self.server_list[1] = self.get_server("rep_subordinate_show")
         if self.server_list[1] is None:
             return False
-        self.server_list[2] = self.get_server("rep_master_show")
+        self.server_list[2] = self.get_server("rep_main_show")
         if self.server_list[2] is None:
             return False
             
@@ -46,21 +46,21 @@ class test(show_rpl.test):
     def run(self):
         self.res_fname = "result.txt"
 
-        master_str = "--master=%s" % \
+        main_str = "--main=%s" % \
                      self.build_connection_string(self.server_list[2])
-        slave_str = " --slave=%s" % \
+        subordinate_str = " --subordinate=%s" % \
                     self.build_connection_string(self.server_list[1])
-        conn_str = master_str + slave_str
+        conn_str = main_str + subordinate_str
         
-        cmd_str = "mysqlrplshow.py --master=wikiwakawonky --disco=root:root"
-        comment = "Test case 1 - error: cannot parse master string"
+        cmd_str = "mysqlrplshow.py --main=wikiwakawonky --disco=root:root"
+        comment = "Test case 1 - error: cannot parse main string"
         res =  mutlib.System_test.run_test_case(self, 2, cmd_str, comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        cmd_str = "mysqlrplshow.py --disco=root:root --master=wanda:fish@localhost:%s" % \
+        cmd_str = "mysqlrplshow.py --disco=root:root --main=wanda:fish@localhost:%s" % \
                   self.server_list[0].port
-        comment = "Test case 2 - error: invalid login to master"
+        comment = "Test case 2 - error: invalid login to main"
         res =  mutlib.System_test.run_test_case(self, 1, cmd_str, comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
@@ -72,12 +72,12 @@ class test(show_rpl.test):
 
         cmd = "mysqlreplicate.py --rpl-user=rpl:rpl " 
         try:
-            res = self.exec_util(cmd+master_str+slave_str,
+            res = self.exec_util(cmd+main_str+subordinate_str,
                                  self.res_fname)            
         except UtilError, e:
             raise MUTLibError(e.errmsg)
         
-        cmd_str = "mysqlrplshow.py --disco=root:root " + master_str
+        cmd_str = "mysqlrplshow.py --disco=root:root " + main_str
 
         comment = "Test case 3 - show topology - bad format"
         cmd_opts = "  --show-list --recurse --format=XXXXXX"
@@ -89,7 +89,7 @@ class test(show_rpl.test):
         # Create a user to test error for not enough permissions
         self.server_list[2].exec_query("CREATE USER 'josh'@'localhost'")
 
-        cmd_str = "mysqlrplshow.py --disco=root:root --master=josh@localhost:%s" % \
+        cmd_str = "mysqlrplshow.py --disco=root:root --main=josh@localhost:%s" % \
                   self.server_list[2].port
         if not self.server_list[2].socket is None:
             cmd_str += ":" + self.server_list[2].socket
@@ -125,8 +125,8 @@ class test(show_rpl.test):
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        comment = "Test case 7 - show topology - discover-slaves-login missing"
-        cmd_str = "mysqlrplshow.py --master=josh@localhost:%s" % \
+        comment = "Test case 7 - show topology - discover-subordinates-login missing"
+        cmd_str = "mysqlrplshow.py --main=josh@localhost:%s" % \
                   self.server_list[2].port
         cmd_opts = "  --show-list --recurse --max-depth=9999"
         res = mutlib.System_test.run_test_case(self, 2, cmd_str+cmd_opts,
@@ -140,9 +140,9 @@ class test(show_rpl.test):
                             "user 'wanda'@'localhost' (using password: "
                             "YES)\n")
 
-        self.replace_result("mysqlrplshow.py: error: Master connection "
+        self.replace_result("mysqlrplshow.py: error: Main connection "
                             "values invalid",
-                            "mysqlrplshow.py: error: Master connection "
+                            "mysqlrplshow.py: error: Main connection "
                             "values invalid\n")
 
         show_rpl.test.stop_replication(self, self.server_list[1])

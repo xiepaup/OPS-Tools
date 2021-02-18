@@ -36,56 +36,56 @@ class test(replicate.test):
     def run(self):
         self.res_fname = "result.txt"
 
-        master_str = "--master=%s" % self.build_connection_string(self.server2)
-        slave_str = " --slave=%s" % self.build_connection_string(self.server1)
-        conn_str = master_str + slave_str
+        main_str = "--main=%s" % self.build_connection_string(self.server2)
+        subordinate_str = " --subordinate=%s" % self.build_connection_string(self.server1)
+        conn_str = main_str + subordinate_str
 
         cmd_str = "mysqlreplicate.py "
 
-        comment = "Test case 1 - error: cannot parse server (slave)"
+        comment = "Test case 1 - error: cannot parse server (subordinate)"
         res = mutlib.System_test.run_test_case(self, 2, cmd_str +
-                        master_str + " --slave=wikiwokiwonky "
+                        main_str + " --subordinate=wikiwokiwonky "
                         "--rpl-user=rpl:whatsit", comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        comment = "Test case 2 - error: cannot parse server (master)"
+        comment = "Test case 2 - error: cannot parse server (main)"
         res = mutlib.System_test.run_test_case(self, 2, cmd_str +
-                        slave_str + " --master=wikiwakawonky " +
+                        subordinate_str + " --main=wikiwakawonky " +
                         "--rpl-user=rpl:whatsit", comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        comment = "Test case 3 - error: invalid login to server (master)"
+        comment = "Test case 3 - error: invalid login to server (main)"
         res = mutlib.System_test.run_test_case(self, 1, cmd_str +
-                        slave_str + " --master=nope@nada:localhost:5510 " +
+                        subordinate_str + " --main=nope@nada:localhost:5510 " +
                         "--rpl-user=rpl:whatsit", comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
         conn_values = self.get_connection_values(self.server1)
         
-        comment = "Test case 4 - error: invalid login to server (slave)"
+        comment = "Test case 4 - error: invalid login to server (subordinate)"
         res = mutlib.System_test.run_test_case(self, 1, cmd_str +
-                        master_str + " --slave=nope@nada:localhost:5511 " +
+                        main_str + " --subordinate=nope@nada:localhost:5511 " +
                         "--rpl-user=rpl:whatsit", comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
         str = self.build_connection_string(self.server1)
-        same_str = "--master=%s --slave=%s " % (str, str)
+        same_str = "--main=%s --subordinate=%s " % (str, str)
 
-        comment = "Test case 5a - error: slave and master same machine"
+        comment = "Test case 5a - error: subordinate and main same machine"
         res = mutlib.System_test.run_test_case(self, 2, cmd_str +
                         same_str + "--rpl-user=rpl:whatsit", comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
         str = self.build_connection_string(self.server1)
-        same_str = "--master=%s --slave=root:root@%s:%s " % \
+        same_str = "--main=%s --subordinate=root:root@%s:%s " % \
                    (str, socket.gethostname().split('.', 1)[0],
                     self.server1.port)
-        comment = "Test case 5b - error: slave and master same alias/host"
+        comment = "Test case 5b - error: subordinate and main same alias/host"
         res = mutlib.System_test.run_test_case(self, 2, cmd_str +
                         same_str + "--rpl-user=rpl:whatsit", comment)
         if not res:
@@ -101,15 +101,15 @@ class test(replicate.test):
                                             "root", "temprep1")
         self.server3 = res[0]
         if not self.server3:
-            raise MUTLibError("%s: Failed to create a new slave." % comment)
+            raise MUTLibError("%s: Failed to create a new subordinate." % comment)
 
         new_server_str = self.build_connection_string(self.server3)
-        new_master_str = self.build_connection_string(self.server1)
+        new_main_str = self.build_connection_string(self.server1)
         
-        cmd_str = "mysqlreplicate.py --master=%s " % new_server_str
-        cmd_str += slave_str
+        cmd_str = "mysqlreplicate.py --main=%s " % new_server_str
+        cmd_str += subordinate_str
         
-        comment = "Test case 6 - error: No binary logging on master"
+        comment = "Test case 6 - error: No binary logging on main"
         cmd = cmd_str + "--rpl-user=rpl:whatsit "
         res = mutlib.System_test.run_test_case(self, 1, cmd, comment)
         if not res:
@@ -124,69 +124,69 @@ class test(replicate.test):
         
         conn = self.get_connection_values(self.server3)
         
-        cmd = "mysqlreplicate.py --slave=dummy@localhost"
+        cmd = "mysqlreplicate.py --subordinate=dummy@localhost"
         if conn[3] is not None:
             cmd += ":%s" % conn[3]
         if conn[4] is not None and conn[4] != "":
             cmd +=  ":%s" % conn[4]
-        cmd += " --rpl-user=rpl:whatsit --master=" + new_master_str 
+        cmd += " --rpl-user=rpl:whatsit --main=" + new_main_str 
         res = mutlib.System_test.run_test_case(self, 1, cmd, comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
             
-        cmd_str = "mysqlreplicate.py %s %s" % (master_str, slave_str)
+        cmd_str = "mysqlreplicate.py %s %s" % (main_str, subordinate_str)
 
         res = self.server2.show_server_variable("server_id")
         if not res:
-            raise MUTLibError("Cannot get master's server id.")
-        master_serverid = res[0][1]
+            raise MUTLibError("Cannot get main's server id.")
+        main_serverid = res[0][1]
         
         self.server2.exec_query("SET GLOBAL server_id = 0")
         
-        comment = "Test case 8 - error: Master server id = 0"
+        comment = "Test case 8 - error: Main server id = 0"
         cmd = cmd_str + "--rpl-user=rpl:whatsit "
         res = mutlib.System_test.run_test_case(self, 1, cmd, comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        self.server2.exec_query("SET GLOBAL server_id = %s" % master_serverid)
+        self.server2.exec_query("SET GLOBAL server_id = %s" % main_serverid)
             
         res = self.server1.show_server_variable("server_id")
         if not res:
-            raise MUTLibError("Cannot get slave's server id.")
-        slave_serverid = res[0][1]
+            raise MUTLibError("Cannot get subordinate's server id.")
+        subordinate_serverid = res[0][1]
         
         self.server1.exec_query("SET GLOBAL server_id = 0")
         
-        comment = "Test case 9 - error: Slave server id = 0"
+        comment = "Test case 9 - error: Subordinate server id = 0"
         cmd = cmd_str + "--rpl-user=rpl:whatsit "
         res = mutlib.System_test.run_test_case(self, 1, cmd, comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        self.server1.exec_query("SET GLOBAL server_id = %s" % slave_serverid)
+        self.server1.exec_query("SET GLOBAL server_id = %s" % subordinate_serverid)
 
-        comment = "Test case 10 - --master-log-pos but no log file"
-        cmd_opts = "--master-log-pos=96 "
+        comment = "Test case 10 - --main-log-pos but no log file"
+        cmd_opts = "--main-log-pos=96 "
         res = mutlib.System_test.run_test_case(self, 2, cmd+cmd_opts, comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        comment = "Test case 11 - --master-log-file and --start-from-beginning"
-        cmd_opts = "--master-log-file='mysql_bin.00005' --start-from-beginning"
+        comment = "Test case 11 - --main-log-file and --start-from-beginning"
+        cmd_opts = "--main-log-file='mysql_bin.00005' --start-from-beginning"
         res = mutlib.System_test.run_test_case(self, 2, cmd+cmd_opts, comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        comment = "Test case 12 - --master-log-pos and --start-from-beginning"
-        cmd_opts = "--master-log-pos=96 --start-from-beginning"
+        comment = "Test case 12 - --main-log-pos and --start-from-beginning"
+        cmd_opts = "--main-log-pos=96 --start-from-beginning"
         res = mutlib.System_test.run_test_case(self, 2, cmd+cmd_opts, comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
 
-        comment = "Test case 13 - --master-log-file+pos and --start-from-beginning"
-        cmd_opts = "--master-log-pos=96 --start-from-beginning "
-        cmd_opts += "--master-log-file='mysql_bin.00005'"
+        comment = "Test case 13 - --main-log-file+pos and --start-from-beginning"
+        cmd_opts = "--main-log-pos=96 --start-from-beginning "
+        cmd_opts += "--main-log-file='mysql_bin.00005'"
         res = mutlib.System_test.run_test_case(self, 2, cmd+cmd_opts, comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)
@@ -207,13 +207,13 @@ class test(replicate.test):
         self.replace_result("ERROR: Query failed. 1227",
                             "ERROR: Query failed. 1227: Access denied;\n")
 
-        self.replace_result("mysqlreplicate.py: error: Master connection "
+        self.replace_result("mysqlreplicate.py: error: Main connection "
                             "values invalid",
-                            "mysqlreplicate.py: error: Master connection "
+                            "mysqlreplicate.py: error: Main connection "
                             "values invalid\n")
-        self.replace_result("mysqlreplicate.py: error: Slave connection "
+        self.replace_result("mysqlreplicate.py: error: Subordinate connection "
                             "values invalid",
-                            "mysqlreplicate.py: error: Slave connection "
+                            "mysqlreplicate.py: error: Subordinate connection "
                             "values invalid\n")
 
         return True

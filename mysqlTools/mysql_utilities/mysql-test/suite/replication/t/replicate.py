@@ -33,53 +33,53 @@ class test(mutlib.System_test):
         self.s1_serverid = None
         self.s2_serverid = None
 
-        index = self.servers.find_server_by_name("rep_slave")
+        index = self.servers.find_server_by_name("rep_subordinate")
         if index >= 0:
             self.server1 = self.servers.get_server(index)
             try:
                 res = self.server1.show_server_variable("server_id")
             except MUTLibError, e:
-                raise MUTLibError("Cannot get replication slave " +
+                raise MUTLibError("Cannot get replication subordinate " +
                                    "server_id: %s" % e.errmsg)
             self.s1_serverid = int(res[0][1])
         else:
             self.s1_serverid = self.servers.get_next_id()
             res = self.servers.spawn_new_server(self.server0, self.s1_serverid,
-                                               "rep_slave", ' --mysqld='
+                                               "rep_subordinate", ' --mysqld='
                                                 '"--log-bin=mysql-bin "')
             if not res:
-                raise MUTLibError("Cannot spawn replication slave server.")
+                raise MUTLibError("Cannot spawn replication subordinate server.")
             self.server1 = res[0]
             self.servers.add_new_server(self.server1, True)
 
-        index = self.servers.find_server_by_name("rep_master")
+        index = self.servers.find_server_by_name("rep_main")
         if index >= 0:
             self.server2 = self.servers.get_server(index)
             try:
                 res = self.server2.show_server_variable("server_id")
             except MUTLibError, e:
-                raise MUTLibError("Cannot get replication master " +
+                raise MUTLibError("Cannot get replication main " +
                                    "server_id: %s" % e.errmsg)
             self.s2_serverid = int(res[0][1])
         else:
             self.s2_serverid = self.servers.get_next_id()
             res = self.servers.spawn_new_server(self.server0, self.s2_serverid,
-                                                "rep_master", ' --mysqld='
+                                                "rep_main", ' --mysqld='
                                                 '"--log-bin=mysql-bin "')
             if not res:
-                raise MUTLibError("Cannot spawn replication slave server.")
+                raise MUTLibError("Cannot spawn replication subordinate server.")
             self.server2 = res[0]
             self.servers.add_new_server(self.server2, True)
             
         return True
     
-    def run_test_case(self, slave, master, s_id,
+    def run_test_case(self, subordinate, main, s_id,
                       comment, options=None, save_for_compare=False,
                       expected_result=0, save_results=True):
 
-        master_str = "--master=%s" % self.build_connection_string(master)
-        slave_str = " --slave=%s" % self.build_connection_string(slave)
-        conn_str = master_str + slave_str
+        main_str = "--main=%s" % self.build_connection_string(main)
+        subordinate_str = " --subordinate=%s" % self.build_connection_string(subordinate)
+        conn_str = main_str + subordinate_str
         
         # Test case 1 - setup replication among two servers
         if not save_for_compare:
@@ -98,11 +98,11 @@ class test(mutlib.System_test):
 
         # Now test the result and record the action.
         try:
-            res = slave.exec_query("SHOW SLAVE STATUS")
+            res = subordinate.exec_query("SHOW SLAVE STATUS")
             if not save_for_compare and save_results:
                 self.results.append(res)
         except UtilDBError, e:
-            raise MUTLibError("Cannot show slave status: %s" % e.errmsg)
+            raise MUTLibError("Cannot show subordinate status: %s" % e.errmsg)
 
         if save_for_compare:
             self.results.append(comment+"\n")
@@ -117,7 +117,7 @@ class test(mutlib.System_test):
     def run(self):
         self.res_fname = "result.txt"
         
-        comment = "Test case 1 - replicate server1 as slave of server2 "
+        comment = "Test case 1 - replicate server1 as subordinate of server2 "
         res = self.run_test_case(self.server1, self.server2, self.s1_serverid,
                                  comment, None)
         if not res:
@@ -126,9 +126,9 @@ class test(mutlib.System_test):
         try:
             res = self.server1.exec_query("STOP SLAVE")
         except:
-            raise MUTLibError("%s: Failed to stop slave." % comment)
+            raise MUTLibError("%s: Failed to stop subordinate." % comment)
 
-        comment = "Test case 2 - replicate server2 as slave of server1 "
+        comment = "Test case 2 - replicate server2 as subordinate of server1 "
         res = self.run_test_case(self.server2, self.server1, self.s2_serverid,
                                  comment, None)
         if not res:
@@ -137,7 +137,7 @@ class test(mutlib.System_test):
         try:
             res = self.server2.exec_query("STOP SLAVE")
         except:
-            raise MUTLibError("%s: Failed to stop slave." % comment)
+            raise MUTLibError("%s: Failed to stop subordinate." % comment)
 
         return True
 
@@ -148,11 +148,11 @@ class test(mutlib.System_test):
         # Check test case
         if self.results[index] == 0:
             if self.results[index+1] == ():
-                return (false, "%s: Slave status missing." % comment)
+                return (false, "%s: Subordinate status missing." % comment)
             test_result = self.results[index+1][0]
-            if test_result[0] != "Waiting for master to send event":
+            if test_result[0] != "Waiting for main to send event":
                 test_passed = False
-                msg = "%s: Slave failed to communicate with master." % comment
+                msg = "%s: Subordinate failed to communicate with main." % comment
         else:
             test_passed = False
             msg = "%s: Replication event failed." % comment
@@ -181,12 +181,12 @@ class test(mutlib.System_test):
         self.mask_column_result("| XXXXXXX", "|", 3, " XXXXXXXXXXXXXXX ")
         self.mask_column_result("| XXXXXXX", "|", 4, " XXXXXXXXXXXXXXXXXXXX ")
         
-        self.replace_result("#  slave id =", "#  slave id = XXX\n")
-        self.replace_result("# master id =", "# master id = XXX\n")
-        self.replace_result("# master uuid = ",
-                            "# master uuid = XXXXX\n")
-        self.replace_result("#  slave uuid = ",
-                            "#  slave uuid = XXXXX\n")
+        self.replace_result("#  subordinate id =", "#  subordinate id = XXX\n")
+        self.replace_result("# main id =", "# main id = XXX\n")
+        self.replace_result("# main uuid = ",
+                            "# main uuid = XXXXX\n")
+        self.replace_result("#  subordinate uuid = ",
+                            "#  subordinate uuid = XXXXX\n")
         
         self.remove_result("# Creating replication user...")
         self.remove_result("CREATE USER 'rpl'@'localhost'")

@@ -278,7 +278,7 @@ class Database(object):
         """Get a list of objects from a database based on type.
 
         This method retrieves the list of objects for a specific object
-        type and adds it to the class' master object list.
+        type and adds it to the class' main object list.
 
         obj_type[in]       Object type (string) e.g. DATABASE
         """

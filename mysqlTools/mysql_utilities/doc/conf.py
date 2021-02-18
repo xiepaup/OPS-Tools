@@ -38,8 +38,8 @@ source_suffix = '.rst'
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
 
-# The master toctree document.
-master_doc = 'index'
+# The main toctree document.
+main_doc = 'index'
 
 # General information about the project.
 project = u'MySQL Utilities'
@@ -247,7 +247,7 @@ man_pages = [
      u'Check prerequisities for replication',
      [u'MySQL Utilities Team'], 1),
     ('man/mysqlrplshow', 'mysqlrplshow',
-     u'Show slaves attached to a master',
+     u'Show subordinates attached to a main',
      [u'MySQL Utilities Team'], 1),
     ('man/mysqlserverclone', 'mysqlserverclone',
      u'Start a new instance of an existing MySQL server',

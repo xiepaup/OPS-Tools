@@ -70,12 +70,12 @@ class test(replicate.test):
         self.remove_result("# status:")
         self.remove_result("# error: ")
         self.remove_result("# CHANGE MASTER TO MASTER_HOST")
-        self.mask_result("# master id =", "= ", "= XXX")
-        self.mask_result("#  slave id =", "= ", "= XXX")
-        self.replace_result("# master uuid = ",
-                            "# master uuid = XXXXX\n")
-        self.replace_result("#  slave uuid = ",
-                            "#  slave uuid = XXXXX\n")
+        self.mask_result("# main id =", "= ", "= XXX")
+        self.mask_result("#  subordinate id =", "= ", "= XXX")
+        self.replace_result("# main uuid = ",
+                            "# main uuid = XXXXX\n")
+        self.replace_result("#  subordinate uuid = ",
+                            "#  subordinate uuid = XXXXX\n")
 
         return True
 

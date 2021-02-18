@@ -33,7 +33,7 @@ class test(rpl_admin.test):
     def setup(self):
         res = rpl_admin.test.setup(self)
     
-        self.server5 = rpl_admin.test.spawn_server(self, "rep_slave4",
+        self.server5 = rpl_admin.test.spawn_server(self, "rep_subordinate4",
                                                    "--log-bin")
     
         self.s4_port = self.server5.port
@@ -41,7 +41,7 @@ class test(rpl_admin.test):
         self.server5.exec_query("GRANT REPLICATION SLAVE ON *.* TO "
                                 "'rpl'@'localhost' IDENTIFIED BY 'rpl'")
 
-        self.master_str = " --master=%s" % \
+        self.main_str = " --main=%s" % \
                           self.build_connection_string(self.server1)
         try:
             self.server5.exec_query("STOP SLAVE")
@@ -49,8 +49,8 @@ class test(rpl_admin.test):
         except:
             pass
         
-        slave_str = " --slave=%s" % self.build_connection_string(self.server5)
-        conn_str = self.master_str + slave_str
+        subordinate_str = " --subordinate=%s" % self.build_connection_string(self.server5)
+        conn_str = self.main_str + subordinate_str
         cmd = "mysqlreplicate.py --rpl-user=rpl:rpl %s" % conn_str
         res1 = self.exec_util(cmd, self.res_fname)
 
@@ -59,18 +59,18 @@ class test(rpl_admin.test):
     def run(self):
         self.res_fname = "result.txt"
         
-        master_conn = self.build_connection_string(self.server1).strip(' ')
-        slave1_conn = self.build_connection_string(self.server2).strip(' ')
-        slave2_conn = self.build_connection_string(self.server3).strip(' ')
-        slave3_conn = self.build_connection_string(self.server4).strip(' ')
-        slave4_conn = self.build_connection_string(self.server5).strip(' ')
+        main_conn = self.build_connection_string(self.server1).strip(' ')
+        subordinate1_conn = self.build_connection_string(self.server2).strip(' ')
+        subordinate2_conn = self.build_connection_string(self.server3).strip(' ')
+        subordinate3_conn = self.build_connection_string(self.server4).strip(' ')
+        subordinate4_conn = self.build_connection_string(self.server5).strip(' ')
         
-        master_str = "--master=" + master_conn
-        slaves_str = "--slaves=" + \
-                     ",".join([slave1_conn, slave2_conn, slave3_conn])
+        main_str = "--main=" + main_conn
+        subordinates_str = "--subordinates=" + \
+                     ",".join([subordinate1_conn, subordinate2_conn, subordinate3_conn])
         
         comment = "Test case 1 - warning for missing --report-host"
-        cmd_str = "mysqlrplshow.py --master=%s --disco=root:root " % master_conn
+        cmd_str = "mysqlrplshow.py --main=%s --disco=root:root " % main_conn
         res = mutlib.System_test.run_test_case(self, 0, cmd_str, comment)
         if not res:
             raise MUTLibError("%s: failed" % comment)

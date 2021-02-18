@@ -20,7 +20,7 @@ from mysql.utilities.exception import MUTLibError
 
 class test(replicate.test):
     """setup replication
-    This test attempts to replicate among a master and slave whose
+    This test attempts to replicate among a main and subordinate whose
     innodb settings are different. It uses the replicate test for
     inherited methods.
     """
@@ -37,34 +37,34 @@ class test(replicate.test):
 
         replicate.test.setup(self)
         
-        index = self.servers.find_server_by_name("rep_slave_no_innodb")
+        index = self.servers.find_server_by_name("rep_subordinate_no_innodb")
         if index >= 0:
             self.server5 = self.servers.get_server(index)
             try:
                 res = self.server5.show_server_variable("server_id")
             except MUTLibError, e:
-                raise MUTLibError("Cannot get replication slave " +
+                raise MUTLibError("Cannot get replication subordinate " +
                                    "server_id: %s" % e.errmsg)
             self.s5_serverid = int(res[0][1])
         else:
             self.s5_serverid = self.servers.get_next_id()
             res = self.servers.spawn_new_server(self.server0, self.s5_serverid,
-                                                "rep_slave_no_innodb",
+                                                "rep_subordinate_no_innodb",
                                               ' --mysqld="--log-bin=mysql-bin '
                                               ' --skip-innodb --default-'
                                               'storage-engine=MyISAM"')
             if not res:
-                raise MUTLibError("Cannot spawn replication slave server.")
+                raise MUTLibError("Cannot spawn replication subordinate server.")
             self.server5 = res[0]
             self.servers.add_new_server(self.server5, True)
             
         return True
     
-    def run_test_case(self, slave, master, s_id,
+    def run_test_case(self, subordinate, main, s_id,
                       comment, options=None, expected_result=0):
-        master_str = "--master=%s" % self.build_connection_string(master)
-        slave_str = " --slave=%s" % self.build_connection_string(slave)
-        conn_str = master_str + slave_str
+        main_str = "--main=%s" % self.build_connection_string(main)
+        subordinate_str = " --subordinate=%s" % self.build_connection_string(subordinate)
+        conn_str = main_str + subordinate_str
         
         # Test case 1 - setup replication among two servers
         self.results.append(comment+"\n")
@@ -96,7 +96,7 @@ class test(replicate.test):
         try:
             res = self.server5.exec_query("STOP SLAVE")
         except:
-            raise MUTLibError("%s: Failed to stop slave." % comment)
+            raise MUTLibError("%s: Failed to stop subordinate." % comment)
 
         replicate.test.mask_results(self)
         

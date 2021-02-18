@@ -37,19 +37,19 @@ class test(rpl_admin.test):
         return rpl_admin.test.setup(self)
         
     def run(self):
-        master_conn = self.build_connection_string(self.server1).strip(' ')
-        slave_conn = self.build_connection_string(self.server2).strip(' ')
+        main_conn = self.build_connection_string(self.server1).strip(' ')
+        subordinate_conn = self.build_connection_string(self.server2).strip(' ')
         
-        # For this test, it's OK when master and slave are the same
-        master_str = "--master=" + master_conn
-        slave_str = "--slave=" + slave_conn
+        # For this test, it's OK when main and subordinate are the same
+        main_str = "--main=" + main_conn
+        subordinate_str = "--subordinate=" + subordinate_conn
         
         # command used in test cases: replace 3 element with location of
         # log file.
         cmd = [
             "mysqlrpladmin.py",
-            master_str,
-            slave_str,
+            main_str,
+            subordinate_str,
             "--log=" + _LOGNAME,
             "health",
             ]

@@ -47,7 +47,7 @@ class test(diskusage_basic.test):
                                             ' --log-error=%s"' % self.error_log)
         self.server1 = res[0]
         if not self.server1:
-            raise MUTLibError("%s: Failed to create a new slave." % comment)
+            raise MUTLibError("%s: Failed to create a new subordinate." % comment)
 
         self.drop_all()
         data_file = os.path.normpath("./std_data/basic_data.sql")

@@ -67,7 +67,7 @@ class test(mutlib.System_test):
                                             "root", "temp_server_info")
         self.server3 = res[0]
         if not self.server3:
-            raise MUTLibError("Failed to create a new slave.")
+            raise MUTLibError("Failed to create a new subordinate.")
 
         from_conn3 = "--server=" + self.build_connection_string(self.server3)
         cmd_str = "mysqlserverinfo.py %s " % from_conn3

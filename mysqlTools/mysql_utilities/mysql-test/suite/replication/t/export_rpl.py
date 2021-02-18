@@ -19,7 +19,7 @@ import mutlib
 import replicate
 from mysql.utilities.exception import MUTLibError
 
-_RPL_MODES = ["master", "slave", "both"]
+_RPL_MODES = ["main", "subordinate", "both"]
 _LOCKTYPES = ['no-locks', 'lock-all', 'snapshot']
 
 class test(replicate.test):
@@ -42,28 +42,28 @@ class test(replicate.test):
 
         result = replicate.test.setup(self)
 
-        index = self.servers.find_server_by_name("rep_relay_slave")
+        index = self.servers.find_server_by_name("rep_relay_subordinate")
         if index >= 0:
             self.server3 = self.servers.get_server(index)
             try:
                 res = self.server3.show_server_variable("server_id")
             except MUTLibError, e:
-                raise MUTLibError("Cannot get relay slave " +
+                raise MUTLibError("Cannot get relay subordinate " +
                                    "server_id: %s" % e.errmsg)
             self.s3_serverid = int(res[0][1])
         else:
             self.s3_serverid = self.servers.get_next_id()
             res = self.servers.spawn_new_server(self.server0, self.s3_serverid,
-                                               "rep_relay_slave", ' --mysqld='
+                                               "rep_relay_subordinate", ' --mysqld='
                                                 '"--log-bin=mysql-bin "')
             if not res:
-                raise MUTLibError("Cannot spawn replication slave server.")
+                raise MUTLibError("Cannot spawn replication subordinate server.")
             self.server3 = res[0]
             self.servers.add_new_server(self.server3, True)
 
-        master_str = "--master=%s" % self.build_connection_string(self.server1)
-        slave_str = " --slave=%s" % self.build_connection_string(self.server2)
-        conn_str = master_str + slave_str
+        main_str = "--main=%s" % self.build_connection_string(self.server1)
+        subordinate_str = " --subordinate=%s" % self.build_connection_string(self.server2)
+        conn_str = main_str + subordinate_str
         res = self.server1.exec_query("STOP SLAVE")
         res = self.server1.exec_query("RESET SLAVE")
         res = self.server2.exec_query("STOP SLAVE")
@@ -91,9 +91,9 @@ class test(replicate.test):
         except MUTLibError, e:
             raise MUTLibError(e.errmsg)
 
-        master_str = " --master=%s" % self.build_connection_string(self.server2)
-        slave_str = " --slave=%s" % self.build_connection_string(self.server3)
-        conn_str = master_str + slave_str
+        main_str = " --main=%s" % self.build_connection_string(self.server2)
+        subordinate_str = " --subordinate=%s" % self.build_connection_string(self.server3)
+        conn_str = main_str + subordinate_str
         res = self.server3.exec_query("STOP SLAVE")
         res = self.server3.exec_query("RESET SLAVE")
         
@@ -106,9 +106,9 @@ class test(replicate.test):
         return result
 
     def run(self):
-        master_conn = "--server=" + self.build_connection_string(self.server1)
+        main_conn = "--server=" + self.build_connection_string(self.server1)
         relay_conn = "--server=" + self.build_connection_string(self.server2)
-        slave_conn = "--server=" + self.build_connection_string(self.server3)
+        subordinate_conn = "--server=" + self.build_connection_string(self.server3)
 
         cmd_str = "mysqldbexport.py util_test --export=both " + \
                   "--skip=events,grants,procedures,functions,views " + \
@@ -119,10 +119,10 @@ class test(replicate.test):
             for locktype in _LOCKTYPES:
                 comment = "Test case %s - rpl = %s and lock_type = %s" % \
                           (test_num, rpl_mode, locktype)
-                if rpl_mode == "master":
-                    cmd_opts = master_conn
-                elif rpl_mode == "slave":
-                    cmd_opts = slave_conn
+                if rpl_mode == "main":
+                    cmd_opts = main_conn
+                elif rpl_mode == "subordinate":
+                    cmd_opts = subordinate_conn
                 else:
                     cmd_opts = relay_conn
                 cmd_opts += " --rpl=%s --locking=%s" % (rpl_mode, locktype)
@@ -157,11 +157,11 @@ class test(replicate.test):
     
     def drop_all(self):
         self.drop_db(self.server1, "util_test")
-        self.drop_db(self.server1, "master_db1")
+        self.drop_db(self.server1, "main_db1")
         self.drop_db(self.server2, "util_test")
-        self.drop_db(self.server2, "master_db1")
+        self.drop_db(self.server2, "main_db1")
         self.drop_db(self.server3, "util_test")
-        self.drop_db(self.server3, "master_db1")
+        self.drop_db(self.server3, "main_db1")
         try:
             self.server1.exec_query("DROP USER 'joe'@'user'")
         except:

@@ -21,7 +21,7 @@ from mysql.utilities.exception import UtilError, MUTLibError
 
 class test(show_rpl.test):
     """show replication topology - parameter testing
-    This test runs the mysqlrplshow utility on a known master-slave topology
+    This test runs the mysqlrplshow utility on a known main-subordinate topology
     with a variety of parameters. It uses the show_rpl test as a parent for
     setup and teardown methods.
     """
@@ -31,10 +31,10 @@ class test(show_rpl.test):
 
     def setup(self):
         self.server_list[0] = self.servers.get_server(0)
-        self.server_list[1] = self.get_server("rep_slave_show")
+        self.server_list[1] = self.get_server("rep_subordinate_show")
         if self.server_list[1] is None:
             return False
-        self.server_list[2] = self.get_server("rep_master_show")
+        self.server_list[2] = self.get_server("rep_main_show")
         if self.server_list[2] is None:
             return False
             
@@ -46,11 +46,11 @@ class test(show_rpl.test):
     def run(self):
         self.res_fname = "result.txt"
 
-        master_str = "--master=%s" % \
+        main_str = "--main=%s" % \
                      self.build_connection_string(self.server_list[2])
-        slave_str = " --slave=%s" % \
+        subordinate_str = " --subordinate=%s" % \
                     self.build_connection_string(self.server_list[1])
-        conn_str = master_str + slave_str
+        conn_str = main_str + subordinate_str
         
         show_rpl.test.stop_replication(self, self.server_list[4])
         show_rpl.test.stop_replication(self, self.server_list[3])
@@ -67,19 +67,19 @@ class test(show_rpl.test):
 
         cmd = "mysqlreplicate.py --rpl-user=rpl:rpl " 
         try:
-            res = self.exec_util(cmd+master_str+slave_str,
+            res = self.exec_util(cmd+main_str+subordinate_str,
                                  self.res_fname)            
         except UtilError, e:
             raise MUTLibError(e.errmsg)
             
         cmd = "mysqlshow_rpl.py --rpl-user=rpl:rpl " 
         try:
-            res = self.exec_util(cmd+master_str+slave_str,
+            res = self.exec_util(cmd+main_str+subordinate_str,
                                  self.res_fname)            
         except UtilError, e:
             raise MUTLibError(e.errmsg)
         
-        cmd_str = "mysqlrplshow.py --disco=root:root " + master_str
+        cmd_str = "mysqlrplshow.py --disco=root:root " + main_str
 
         comment = "Test case 1 - show topology - without list"
         cmd_opts = "  --recurse "

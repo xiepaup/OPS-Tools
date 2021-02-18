@@ -17,8 +17,8 @@
 #
 
 """
-This file contains the replication slave administration utility. It is used to
-perform replication operations on one or more slaves.
+This file contains the replication subordinate administration utility. It is used to
+perform replication operations on one or more subordinates.
 """
 
 from mysql.utilities.common.tools import check_python_version
@@ -44,7 +44,7 @@ from mysql.utilities import VERSION_FRM
 # Constants
 NAME = "MySQL Utilities - mysqlfailover "
 DESCRIPTION = "mysqlfailover - automatic replication health monitoring and failover"
-USAGE = "%prog --master=root@localhost --discover-slaves-login=root " + \
+USAGE = "%prog --main=root@localhost --discover-subordinates-login=root " + \
         "--candidates=root@host123:3306,root@host456:3306 " 
 _DATE_FORMAT = '%Y-%m-%d %H:%M:%S %p'
 _DATE_LEN = 22
@@ -100,16 +100,16 @@ add_failover_options(parser)
 # Interval for continuous mode
 parser.add_option("--interval", "-i", action="store", dest="interval",
                   type="int", default="15", help="interval in seconds for "
-                  "polling the master for failure and reporting health. "
+                  "polling the main for failure and reporting health. "
                   "Default = 15 seconds. Lowest value is 5 seconds.")
 
 # Add failover modes
 parser.add_option("--failover-mode", "-f", action="store", dest="failover_mode",
                   type="choice", default="auto", choices=["auto", "elect",
-                  "fail"], help="action to take when the master "
-                  "fails. 'auto' = automatically fail to best slave, "
+                  "fail"], help="action to take when the main "
+                  "fails. 'auto' = automatically fail to best subordinate, "
                   "'elect' = fail to candidate list or if no candidate meets "
-                  "criteria fail, 'fail' = take no action and stop when master "
+                  "criteria fail, 'fail' = take no action and stop when main "
                   "fails. Default = 'auto'.")
 
 # Add failover detection extension point
@@ -119,9 +119,9 @@ parser.add_option("--exec-fail-check", action="store", dest="exec_fail",
 
 # Add force to override registry entry
 parser.add_option("--force", action="store_true", dest="force",
-                  help="override the registration check on master for "
+                  help="override the registration check on main for "
                   "multiple instances of the console monitoring the same "
-                  "master.")
+                  "main.")
 
 # Add refresh script external point
 parser.add_option("--exec-post-failover", action="store", dest="exec_post_fail",
@@ -132,8 +132,8 @@ parser.add_option("--exec-post-failover", action="store", dest="exec_post_fail",
 
 # Add rediscover on interval
 parser.add_option("--rediscover", action="store_true", dest="rediscover",
-                  help="Rediscover slaves on interval. Allows console to "
-                  "detect when slaves have been removed or added.")
+                  help="Rediscover subordinates on interval. Allows console to "
+                  "detect when subordinates have been removed or added.")
 
 # Add verbosity mode
 add_verbosity(parser, False)
@@ -144,8 +144,8 @@ add_rpl_user(parser, None)
 # Now we process the rest of the arguments.
 opt, args = parser.parse_args()
 
-# Check slaves list
-check_server_lists(parser, opt.master, opt.slaves)
+# Check subordinates list
+check_server_lists(parser, opt.main, opt.subordinates)
 
 # Check for errors
 if int(opt.interval) < 5:
@@ -159,31 +159,31 @@ try:
 except ValueError:
     parser.error("The --timeout option requires an integer value.")
 
-if opt.master is None:
-    parser.error("You must specify a master to monitor.")
+if opt.main is None:
+    parser.error("You must specify a main to monitor.")
     
-if opt.slaves is None and opt.discover is None:
-    parser.error("You must supply a list of slaves or the "
-                 "--discover-slaves-login option.")
+if opt.subordinates is None and opt.discover is None:
+    parser.error("You must supply a list of subordinates or the "
+                 "--discover-subordinates-login option.")
     
 if opt.failover_mode == 'elect' and opt.candidates is None:
     parser.error("Failover mode = 'elect' reqiures at least one candidate.")
     
-# Parse the master, slaves, and candidates connection parameters
+# Parse the main, subordinates, and candidates connection parameters
 try: 
-    master_val, slaves_val, candidates_val = parse_failover_connections(opt)
+    main_val, subordinates_val, candidates_val = parse_failover_connections(opt)
 except UtilRplError:
     _, e, _ = sys.exc_info()
     print("ERROR: %s" % e.errmsg)
     sys.exit(1)
 
 # Check hostname alias
-for slave_val in slaves_val:
-    if check_hostname_alias(master_val, slave_val):
-        parser.error("The master and one of the slaves are the same host and port.")
+for subordinate_val in subordinates_val:
+    if check_hostname_alias(main_val, subordinate_val):
+        parser.error("The main and one of the subordinates are the same host and port.")
 for cand_val in candidates_val:
-    if check_hostname_alias(master_val, cand_val):
-        parser.error("The master and one of the candidates are the same host and port.")
+    if check_hostname_alias(main_val, cand_val):
+        parser.error("The main and one of the candidates are the same host and port.")
 
 # Create dictionary of options
 options = {
@@ -217,7 +217,7 @@ logging.basicConfig(filename=opt.log_file, level=logging.INFO,
                     datefmt=_DATE_FORMAT)
 
 try:
-    rpl_cmds = RplCommands(master_val, slaves_val, options)
+    rpl_cmds = RplCommands(main_val, subordinates_val, options)
     rpl_cmds.auto_failover(opt.interval)
 except UtilError:
     _, e, _ = sys.exc_info()

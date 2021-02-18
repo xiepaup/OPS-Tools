@@ -17,7 +17,7 @@
 
 """
 This file contains the replication administration tools for managine a
-simple master-to-slaves topology.
+simple main-to-subordinates topology.
 """
 
 import logging
@@ -28,20 +28,20 @@ from mysql.utilities.exception import UtilRplError
 _VALID_COMMANDS_TEXT = """
 Available Commands:
 
-  elect       - perform best slave election and report best slave
-  failover    - conduct failover from master to best slave
+  elect       - perform best subordinate election and report best subordinate
+  failover    - conduct failover from main to best subordinate
   gtid        - show status of global transaction id variables
                 also displays uuids for all servers
   health      - display the replication health
-  reset       - stop and reset all slaves
-  start       - start all slaves
-  stop        - stop all slaves
-  switchover  - perform slave promotion
+  reset       - stop and reset all subordinates
+  start       - start all subordinates
+  stop        - stop all subordinates
+  switchover  - perform subordinate promotion
 
-  Note: elect, failover, gtid, and health require --master and either
-        --slaves or --discover-slave-login
+  Note: elect, failover, gtid, and health require --main and either
+        --subordinates or --discover-subordinate-login
 
-  Note: start, stop and reset require --master and --slaves
+  Note: start, stop and reset require --main and --subordinates
 
 """
 
@@ -49,7 +49,7 @@ _VALID_COMMANDS = ["elect", "failover", "gtid", "health", "reset", "start",
                    "stop", "switchover"]
 _SLAVE_COMMANDS = ["reset", "start", "stop"]
 _MASTER_COLS = ["Host", "Port", "Binary Log File", "Position"]
-_SLAVE_COLS = ["Host", "Port", "Master Log File", "Position", "Seconds Behind"]
+_SLAVE_COLS = ["Host", "Port", "Main Log File", "Position", "Seconds Behind"]
 _GTID_COLS = ["host", "port", "role", "gtid"]
 
 _FAILOVER_ERROR = "%sCheck server for errors and run the mysqlrpladmin " + \
@@ -128,32 +128,32 @@ class RplCommands(object):
 
     This class supports the following replication commands.
 
-    elect       - perform best slave election and report best slave
-    failover    - conduct failover from master to best slave as specified
-                  by the user. This option performs best slave election.
+    elect       - perform best subordinate election and report best subordinate
+    failover    - conduct failover from main to best subordinate as specified
+                  by the user. This option performs best subordinate election.
     gtid        - show status of global transaction id variables
     health      - display the replication health
-    reset       - stop and reset all slaves
-    start       - start all slaves
-    stop        - stop all slaves
-    switchover  - perform slave promotion as specified by the user to a
-                  specific slave. Requires --master and the --candidate
+    reset       - stop and reset all subordinates
+    start       - start all subordinates
+    stop        - stop all subordinates
+    switchover  - perform subordinate promotion as specified by the user to a
+                  specific subordinate. Requires --main and the --candidate
                   options.
     """
 
-    def __init__(self, master_vals, slave_vals, options,
+    def __init__(self, main_vals, subordinate_vals, options,
                  skip_conn_err=True):
         """Constructor
 
-        master_vals[in]    master server connection dictionary
-        slave_vals[in]     list of slave server connection dictionaries
+        main_vals[in]    main server connection dictionary
+        subordinate_vals[in]     list of subordinate server connection dictionaries
         options[in]        options dictionary
         skip_conn_err[in]  if True, do not fail on connection failure
                            Default = True
         """
         from mysql.utilities.common.topology import Topology
 
-        self.master_vals = master_vals
+        self.main_vals = main_vals
         self.options = options
         self.quiet = self.options.get("quiet", False)
         self.logging = self.options.get("logging", False)
@@ -163,12 +163,12 @@ class RplCommands(object):
         for candidate in self.candidates:
             if candidate['host'] == '127.0.0.1':
                 candidate['host'] = 'localhost'
-        for slave in slave_vals:
-            if slave['host'] == '127.0.0.1':
-                slave['host'] = 'localhost'
+        for subordinate in subordinate_vals:
+            if subordinate['host'] == '127.0.0.1':
+                subordinate['host'] = 'localhost'
 
         self.rpl_user = self.options.get("rpl_user", None)
-        self.topology = Topology(master_vals, slave_vals, self.options,
+        self.topology = Topology(main_vals, subordinate_vals, self.options,
                                  skip_conn_err)
 
 
@@ -192,7 +192,7 @@ class RplCommands(object):
 
 
     def _show_health(self):
-        """Run a command on a list of slaves.
+        """Run a command on a list of subordinates.
 
         This method will display the replication health of the topology. This
         includes the following for each server.
@@ -204,21 +204,21 @@ class RplCommands(object):
                          DOWN = cannot connect nor ping
           - gtid       : ON = gtid supported and turned on, OFF = supported
                          but not enabled, NO = not supported
-          - rpl_health : (master) binlog enabled,
-                         (slave) IO tread is running, SQL thread is running,
-                         no errors, slave delay < max_delay,
-                         read log pos + max_position < master's log position
+          - rpl_health : (main) binlog enabled,
+                         (subordinate) IO tread is running, SQL thread is running,
+                         no errors, subordinate delay < max_delay,
+                         read log pos + max_position < main's log position
                          Note: Will show 'ERROR' if there are multiple
                          errors encountered otherwise will display the
                          health check that failed.
 
         If verbosity is set, it will show the following additional information.
 
-          (master)
+          (main)
             - server version, binary log file, position
 
-          (slaves)
-            - server version, master's binary log file, master's log position,
+          (subordinates)
+            - server version, main's binary log file, main's log position,
               IO_Thread, SQL_Thread, Secs_Behind, Remaining_Delay,
               IO_Error_Num, IO_Error
         """
@@ -285,27 +285,27 @@ class RplCommands(object):
         """
         from mysql.utilities.common.options import hostname_is_ip
 
-        uses_ip = hostname_is_ip(self.topology.master.host)
-        for slave_dict in self.topology.slaves:
-            slave = slave_dict['instance']
-            if slave is not None:
-                host, port = slave.get_master_host_port()
-                if uses_ip != hostname_is_ip(slave.host) or \
+        uses_ip = hostname_is_ip(self.topology.main.host)
+        for subordinate_dict in self.topology.subordinates:
+            subordinate = subordinate_dict['instance']
+            if subordinate is not None:
+                host, port = subordinate.get_main_host_port()
+                if uses_ip != hostname_is_ip(subordinate.host) or \
                    uses_ip != hostname_is_ip(host):
                     return False
         return True
 
 
     def _switchover(self):
-        """Perform switchover from master to candidate slave
+        """Perform switchover from main to candidate subordinate
 
-        This method switches the role of master to a candidate slave. The
+        This method switches the role of main to a candidate subordinate. The
         candidate is specified via the --candidate option.
 
         Returns bool - True = no errors, False = errors reported.
         """
-        # Check for --master-info-repository=TABLE if rpl_user is None
-        if not self._check_master_info_type():
+        # Check for --main-info-repository=TABLE if rpl_user is None
+        if not self._check_main_info_type():
             return False
 
         # Check for mixing IP and hostnames
@@ -314,15 +314,15 @@ class RplCommands(object):
             self._report(_HOST_IP_WARNING, logging.WARN, False)
 
         # Check prerequisites - need valid candidate
-        candidate = self.options.get("new_master", None)
+        candidate = self.options.get("new_main", None)
         if candidate is None:
             msg = "No candidate specified."
             self._report(msg, logging.CRITICAL)
             raise UtilRplError(msg)
 
-        self._report(" ".join(["# Performing switchover from master at",
-                     "%s:%s" % (self.master_vals['host'],
-                     self.master_vals['port']), "to slave at %s:%s." %
+        self._report(" ".join(["# Performing switchover from main at",
+                     "%s:%s" % (self.main_vals['host'],
+                     self.main_vals['port']), "to subordinate at %s:%s." %
                      (candidate['host'], candidate['port'])]))
         if not self.topology.switchover(candidate):
             self._report("# Errors found. Switchover aborted.", logging.ERROR)
@@ -331,15 +331,15 @@ class RplCommands(object):
         return True
 
 
-    def _elect_slave(self):
-        """Perform best slave election
+    def _elect_subordinate(self):
+        """Perform best subordinate election
 
-        This method determines which slave is the best candidate for
+        This method determines which subordinate is the best candidate for
         GTID-enabled failover. If called for a non-GTID topology, a warning
         is issued.
         """
         if not self.topology.gtid_enabled():
-            self._report("# WARNING: slave election requires GTID_MODE=ON "
+            self._report("# WARNING: subordinate election requires GTID_MODE=ON "
                          "for all servers.", logging.WARN)
             return
 
@@ -350,18 +350,18 @@ class RplCommands(object):
 
         candidates = self.options.get("candidates", None)
         if candidates is None or len(candidates) == 0:
-            self._report("# Electing candidate slave from known slaves.")
+            self._report("# Electing candidate subordinate from known subordinates.")
         else:
-            self._report("# Electing candidate slave from candidate list "
-                         "then slaves list.")
-        best_slave = self.topology.find_best_slave(candidates)
-        if best_slave is None:
-            self._report("ERROR: No slave found that meets eligilibility "
+            self._report("# Electing candidate subordinate from candidate list "
+                         "then subordinates list.")
+        best_subordinate = self.topology.find_best_subordinate(candidates)
+        if best_subordinate is None:
+            self._report("ERROR: No subordinate found that meets eligilibility "
                          "requirements.", logging.ERROR)
             return
 
-        self._report("# Best slave found is located on %s:%s." %
-                     (best_slave['host'], best_slave['port']))
+        self._report("# Best subordinate found is located on %s:%s." %
+                     (best_subordinate['host'], best_subordinate['port']))
 
 
     def _failover(self, strict=False):
@@ -370,19 +370,19 @@ class RplCommands(object):
         This method executes GTID-enabled failover. If called for a non-GTID
         topology, a warning is issued.
 
-        strict[in]     if True, use only the candidate list for slave
+        strict[in]     if True, use only the candidate list for subordinate
                        election and fail if no candidates are viable.
                        Default = False
 
         Returns bool - True = failover succeeded, False = errors found
         """
         if not self.topology.gtid_enabled():
-            self._report("# WARNING: slave election requires GTID_MODE=ON "
+            self._report("# WARNING: subordinate election requires GTID_MODE=ON "
                          "for all servers.", logging.WARN)
             return
 
-        # Check for --master-info-repository=TABLE if rpl_user is None
-        if not self._check_master_info_type():
+        # Check for --main-info-repository=TABLE if rpl_user is None
+        if not self._check_main_info_type():
             return False
 
         self._report("# Performing failover.")
@@ -392,20 +392,20 @@ class RplCommands(object):
         return True
 
 
-    def _check_master_info_type(self, halt=True):
-        """Check for master information set to TABLE if rpl_user not provided
+    def _check_main_info_type(self, halt=True):
+        """Check for main information set to TABLE if rpl_user not provided
 
         halt[in]       if True, raise error on failure. Default is True
 
         Returns bool - True if rpl_user is specified or False if rpl_user not
-                       specified and at least one slave does not have
-                       --master-info-repository=TABLE.
+                       specified and at least one subordinate does not have
+                       --main-info-repository=TABLE.
         """
-        error = "You must specify either the --rpl-user or set all slaves " + \
-                "to use --master-info-repository=TABLE."
-        # Check for --master-info-repository=TABLE if rpl_user is None
+        error = "You must specify either the --rpl-user or set all subordinates " + \
+                "to use --main-info-repository=TABLE."
+        # Check for --main-info-repository=TABLE if rpl_user is None
         if self.rpl_user is None:
-            if not self.topology.check_master_info_type("TABLE"):
+            if not self.topology.check_main_info_type("TABLE"):
                 if halt:
                     raise UtilRplError(error)
                 self._report(error, logging.ERROR)
@@ -446,8 +446,8 @@ class RplCommands(object):
         # Execute the command
         if command in _SLAVE_COMMANDS:
             if command == 'reset':
-                self.topology.run_cmd_on_slaves('stop')
-            self.topology.run_cmd_on_slaves(command)
+                self.topology.run_cmd_on_subordinates('stop')
+            self.topology.run_cmd_on_subordinates(command)
         elif command in 'gtid':
             self._show_gtid_data()
         elif command == 'health':
@@ -455,7 +455,7 @@ class RplCommands(object):
         elif command == 'switchover':
             self._switchover()
         elif command == 'elect':
-            self._elect_slave()
+            self._elect_subordinate()
         elif command == 'failover':
             self._failover()
         else:
@@ -492,20 +492,20 @@ class RplCommands(object):
         force = self.options.get("force", False)
 
         # Initialize a console
-        console = FailoverConsole(self.topology.master,
+        console = FailoverConsole(self.topology.main,
                                   self.topology.get_health,
                                   self.topology.get_gtid_data,
                                   self.topology.get_server_uuids,
                                   self.options)
 
         # Register instance
-        self._report("Registering instance on master.", logging.INFO, False)
+        self._report("Registering instance on main.", logging.INFO, False)
         old_mode = failover_mode
         failover_mode = console.register_instance(force)
         if failover_mode != old_mode:
             self._report("Multiple instances of failover console found for "
-                         "master %s:%s." % (self.topology.master.host,
-                                            self.topology.master.port),
+                         "main %s:%s." % (self.topology.main.host,
+                                            self.topology.main.port),
                          logging.WARN)
             print "If this is an error, restart the console with --force. "
             print "Failover mode changed to 'FAIL' for this instance. "
@@ -525,7 +525,7 @@ class RplCommands(object):
         finally:
             try:
                 # Unregister instance
-                self._report("Unregistering instance on master.", logging.INFO,
+                self._report("Unregistering instance on main.", logging.INFO,
                              False)
                 console.register_instance(False, False)
                 self._report("Failover console stopped.", logging.INFO, False)
@@ -543,9 +543,9 @@ class RplCommands(object):
         user interface commands and uses the existing failover() method of
         this class to conduct failover.
 
-        When the master goes down, the method can perform one of three actions:
+        When the main goes down, the method can perform one of three actions:
 
-        1) failover to list of candidates first then slaves
+        1) failover to list of candidates first then subordinates
         2) failover to list of candidates only
         3) fail
 
@@ -582,10 +582,10 @@ class RplCommands(object):
                                     logging.CRITICAL)
             raise UtilRplError("Not enough privileges to execute command.")
 
-        # Require --master-info-repository=TABLE for all slaves
-        if not self.topology.check_master_info_type("TABLE"):
-            msg = "Failover requires --master-info-repository=TABLE for " + \
-                  "all slaves."
+        # Require --main-info-repository=TABLE for all subordinates
+        if not self.topology.check_main_info_type("TABLE"):
+            msg = "Failover requires --main-info-repository=TABLE for " + \
+                  "all subordinates."
             self._report(msg, logging.ERROR, False)
             raise UtilRplError(msg)
 
@@ -612,16 +612,16 @@ class RplCommands(object):
         first_pass = True
         failover = False
         while not done:
-            # Use try block in case master class has gone away.
+            # Use try block in case main class has gone away.
             try:
-                old_host = self.master.host
-                old_port = self.master.port
+                old_host = self.main.host
+                old_port = self.main.port
             except:
                 pass
                 old_host = "UNKNOWN"
                 old_port = "UNKNOWN"
 
-            # If a failover script is provided, check it else check master
+            # If a failover script is provided, check it else check main
             # using connectivity checks.
             if exec_fail is not None:
                 # Execute failover check script
@@ -641,33 +641,33 @@ class RplCommands(object):
                                      "Failover initiated", logging.WARN)
                         failover = True
             else:
-                # Check the master. If not alive, wait for pingtime seconds
+                # Check the main. If not alive, wait for pingtime seconds
                 # and try again.
-                if self.topology.master is not None and \
-                   not self.topology.master.is_alive():
-                    msg = "Master may be down. Waiting for %s seconds." % \
+                if self.topology.main is not None and \
+                   not self.topology.main.is_alive():
+                    msg = "Main may be down. Waiting for %s seconds." % \
                           pingtime
                     self._report(msg, logging.INFO, False)
                     time.sleep(pingtime)
                     try:
-                        self.topology.master.connect()
+                        self.topology.main.connect()
                     except:
-                        self._report("Cannot reconnect to master.",
+                        self._report("Cannot reconnect to main.",
                                      logging.INFO, False)
 
-                # Check the master again. If no connection or lost connection,
+                # Check the main again. If no connection or lost connection,
                 # try ping and if still not alive, failover. This performs the
-                # timeout threshold for detecting a down master.
-                if self.topology.master is None or \
-                   not ping_host(self.topology.master.host, pingtime) or \
-                   not self.topology.master.is_alive():
+                # timeout threshold for detecting a down main.
+                if self.topology.main is None or \
+                   not ping_host(self.topology.main.host, pingtime) or \
+                   not self.topology.main.is_alive():
                     failover = True
 
             if failover:
-                self._report("Master is confirmed to be down or unreachable.",
+                self._report("Main is confirmed to be down or unreachable.",
                              logging.CRITICAL, False)
                 try:
-                    self.topology.master.disconnect()
+                    self.topology.main.disconnect()
                 except:
                     pass
                 console.clear()
@@ -679,7 +679,7 @@ class RplCommands(object):
                     res = self.topology.failover(self.candidates, True)
                 else:
                     msg = _FAILOVER_ERROR % \
-                          "Master has failed and automatic failover is not enabled. "
+                          "Main has failed and automatic failover is not enabled. "
                     self._report(msg, logging.CRITICAL, False)
                     # Execute post failover script
                     self.topology.run_script(post_fail, False,
@@ -693,10 +693,10 @@ class RplCommands(object):
                     self.topology.run_script(post_fail, False,
                                              [old_host, old_port])
                     raise UtilRplError(msg)
-                self.master = self.topology.master
-                console.master = self.master
-                self.topology.remove_discovered_slaves()
-                self.topology.discover_slaves()
+                self.main = self.topology.main
+                console.main = self.main
+                self.topology.remove_discovered_subordinates()
+                self.topology.discover_subordinates()
                 console.list_data = None
                 print "\nFailover console will restart in 5 seconds."
                 time.sleep(5)
@@ -705,13 +705,13 @@ class RplCommands(object):
                 # Execute post failover script
                 self.topology.run_script(post_fail, False,
                                          [old_host, old_port,
-                                          self.master.host, self.master.port])
+                                          self.main.host, self.main.port])
 
-            # discover slaves if option was specified at startup
+            # discover subordinates if option was specified at startup
             elif self.options.get("discover", None) is not None and \
                 (not first_pass or self.options.get("rediscover", False)):
-                # Force refresh of health list if new slaves found
-                if self.topology.discover_slaves():
+                # Force refresh of health list if new subordinates found
+                if self.topology.discover_subordinates():
                     console.list_data = None
 
             res = console.display_console()

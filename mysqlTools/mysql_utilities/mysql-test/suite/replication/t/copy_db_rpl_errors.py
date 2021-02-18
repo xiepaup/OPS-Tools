@@ -21,8 +21,8 @@ from mysql.utilities.exception import MUTLibError
 
 class test(export_rpl_errors.test):
     """check replication errors for copy utility
-    This test executes a series of copy database operations on a master and
-    slave using a variety of replication options exercising the errors
+    This test executes a series of copy database operations on a main and
+    subordinate using a variety of replication options exercising the errors
     associated with the --rpl commands and processing. It uses the
     export_rpl_errors test for setup and tear down methods.
     """
@@ -56,7 +56,7 @@ class test(export_rpl_errors.test):
         self.server1.exec_query("CREATE USER imnotamouse@localhost")
 
         comment = "Test case %s - warning: --rpl-user missing" % test_num
-        option = " --rpl=master "
+        option = " --rpl=main "
         res = mutlib.System_test.run_test_case(self, 1, cmd_str + option,
                                                comment)
         if not res:
@@ -64,7 +64,7 @@ class test(export_rpl_errors.test):
         test_num += 1
 
         comment = "Test case %s - error: --rpl-user missing user" % test_num
-        option = " --rpl=master --rpl-user=missing "
+        option = " --rpl=main --rpl-user=missing "
         res = mutlib.System_test.run_test_case(self, 1, cmd_str + option,
                                                comment)
         if not res:
@@ -73,7 +73,7 @@ class test(export_rpl_errors.test):
 
         comment = "Test case %s - error: --rpl-user missing privileges" % \
                   test_num
-        option = " --rpl=master --rpl-user=imnotamouse "
+        option = " --rpl=main --rpl-user=imnotamouse "
         res = mutlib.System_test.run_test_case(self, 1, cmd_str + option,
                                                comment)
         if not res:
@@ -84,8 +84,8 @@ class test(export_rpl_errors.test):
         self.server2.exec_query("STOP SLAVE")
         self.server2.exec_query("RESET SLAVE")
         
-        comment = "Test case %s - error: slave not connected" % test_num
-        option = " --rpl=slave "
+        comment = "Test case %s - error: subordinate not connected" % test_num
+        option = " --rpl=subordinate "
         res = mutlib.System_test.run_test_case(self, 1, cmd_str + option,
                                                comment)
         if not res:
@@ -98,7 +98,7 @@ class test(export_rpl_errors.test):
                   "--rpl-user=rpl:rpl %s " % from_conn
         
         comment = "Test case %s - error: no binlog" % test_num
-        option = " --rpl=master "
+        option = " --rpl=main "
         res = mutlib.System_test.run_test_case(self, 1, cmd_str + option,
                                                comment)
         if not res:

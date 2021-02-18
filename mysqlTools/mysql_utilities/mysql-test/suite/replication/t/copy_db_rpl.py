@@ -20,10 +20,10 @@ import replicate
 from mysql.utilities.exception import MUTLibError, UtilDBError
 
 _MASTER_DB_CMDS = [
-    "DROP DATABASE IF EXISTS master_db1",
-    "CREATE DATABASE master_db1",
-    "CREATE TABLE master_db1.t1 (a int)",
-    "INSERT INTO master_db1.t1 VALUES (1), (2), (3)",
+    "DROP DATABASE IF EXISTS main_db1",
+    "CREATE DATABASE main_db1",
+    "CREATE TABLE main_db1.t1 (a int)",
+    "INSERT INTO main_db1.t1 VALUES (1), (2), (3)",
 ]
 
 _TEST_CASE_RESULTS = [
@@ -31,33 +31,33 @@ _TEST_CASE_RESULTS = [
     # BEFORE:
     #   SHOW DATABASES LIKE 'util_test'
     #   SELECT COUNT(*) FROM util_test.t1
-    #   SHOW DATABASES LIKE 'master_db1'
-    #   SELECT COUNT(*) FROM master_db1.t1
+    #   SHOW DATABASES LIKE 'main_db1'
+    #   SELECT COUNT(*) FROM main_db1.t1
     # AFTER:
     #   SHOW DATABASES LIKE 'util_test'
     #   SELECT COUNT(*) FROM util_test.t1
-    #   SHOW DATABASES LIKE 'master_db1'
-    #   SELECT COUNT(*) FROM master_db1.t1
-    #   <insert 2 rows into master_db1.t1>
-    #   SELECT COUNT(*) FROM master_db1.t1
-    [0, 'util_test', '7', None, False, 'util_test', '7', 'master_db1', '3', '5'],
-    [0, None, False, None, False, 'util_test', '7', 'master_db1', '5', '7'],
-    [0, None, False, None, False, 'util_test', '7', 'master_db1', '7', '9'],
+    #   SHOW DATABASES LIKE 'main_db1'
+    #   SELECT COUNT(*) FROM main_db1.t1
+    #   <insert 2 rows into main_db1.t1>
+    #   SELECT COUNT(*) FROM main_db1.t1
+    [0, 'util_test', '7', None, False, 'util_test', '7', 'main_db1', '3', '5'],
+    [0, None, False, None, False, 'util_test', '7', 'main_db1', '5', '7'],
+    [0, None, False, None, False, 'util_test', '7', 'main_db1', '7', '9'],
 ]
 
-_MAX_ATTEMPTS = 10   # Max tries to wait for slave before failing.
+_MAX_ATTEMPTS = 10   # Max tries to wait for subordinate before failing.
 
 class test(replicate.test):
     """test mysqldbcopy replication features
-    This test executes the replication feature in mysqldbcopy to sync a slave
-    and to test provisioning a slave from either a master or a slave. It uses
+    This test executes the replication feature in mysqldbcopy to sync a subordinate
+    and to test provisioning a subordinate from either a main or a subordinate. It uses
     the replicate test as a parent for testing methods.
     """
     
     # Test Cases:
-    #    - copy extra db on master
-    #    - provision a new slave from master
-    #    - provision a new slave from existing slave
+    #    - copy extra db on main
+    #    - provision a new subordinate from main
+    #    - provision a new subordinate from existing subordinate
         
     def check_prerequisites(self):
         if self.servers.get_server(0).check_version_compat(5, 6, 5):
@@ -74,24 +74,24 @@ class test(replicate.test):
         self.res_fname = "result.txt"
         result = replicate.test.setup(self)
 
-        # Note: server1 is master, server2, server3 are slaves.
-        #       server3 is a new slave with nothing on it.
+        # Note: server1 is main, server2, server3 are subordinates.
+        #       server3 is a new subordinate with nothing on it.
         
-        index = self.servers.find_server_by_name("new_slave")
+        index = self.servers.find_server_by_name("new_subordinate")
         if index >= 0:
             self.server3 = self.servers.get_server(index)
             try:
                 res = self.server3.show_server_variable("server_id")
             except MUTLibError, e:
-                raise MUTLibError("Cannot get new replication slave " +
+                raise MUTLibError("Cannot get new replication subordinate " +
                                    "server_id: %s" % e.errmsg)
             self.s3_serverid = int(res[0][1])
         else:
             self.s3_serverid = self.servers.get_next_id()
             res = self.servers.spawn_new_server(self.server0, self.s3_serverid,
-                                               "new_slave")
+                                               "new_subordinate")
             if not res:
-                raise MUTLibError("Cannot spawn new replication slave server.")
+                raise MUTLibError("Cannot spawn new replication subordinate server.")
             self.server3 = res[0]
             self.servers.add_new_server(self.server3, True)
 
@@ -115,9 +115,9 @@ class test(replicate.test):
             raise MUTLibError("Failed to read commands from file %s: " % \
                                data_file + e.errmsg)
 
-        master_str = "--master=%s" % self.build_connection_string(self.server1)
-        slave_str = " --slave=%s" % self.build_connection_string(self.server2)
-        conn_str = master_str + slave_str
+        main_str = "--main=%s" % self.build_connection_string(self.server1)
+        subordinate_str = " --subordinate=%s" % self.build_connection_string(self.server2)
+        conn_str = main_str + subordinate_str
         
         cmd = "mysqlreplicate.py --rpl-user=rpl:rpl %s" % conn_str
         try:
@@ -127,18 +127,18 @@ class test(replicate.test):
 
         return result
     
-    def wait_for_slave(self, slave, attempts):
-        # Wait for slave to read the master log file
+    def wait_for_subordinate(self, subordinate, attempts):
+        # Wait for subordinate to read the main log file
         i = 0
         while i < attempts:
             if self.debug:
                 print ".",
-            res = slave.exec_query("SHOW SLAVE STATUS")
-            if res and res[0][0] == 'Waiting for master to send event':
+            res = subordinate.exec_query("SHOW SLAVE STATUS")
+            if res and res[0][0] == 'Waiting for main to send event':
                 break
             i += 1
             if i == attempts:
-                raise MUTLibError("Slave did not sync with master.")
+                raise MUTLibError("Subordinate did not sync with main.")
         return
     
     def _check_result(self, server, query):
@@ -152,7 +152,7 @@ class test(replicate.test):
         except:
             return False
 
-    def run_test_case(self, actual_result, test_num, master, source,
+    def run_test_case(self, actual_result, test_num, main, source,
                       destination, cmd_list, db_list, cmd_opts, comment,
                       expected_results, restart_replication=False,
                       skip_wait=False):
@@ -166,9 +166,9 @@ class test(replicate.test):
             destination.exec_query("RESET SLAVE")
             for db in db_list:
                 self.drop_db(destination, db)
-            master_str = "--master=%s" % self.build_connection_string(master)
-            slave_str = " --slave=%s" % self.build_connection_string(destination)
-            conn_str = master_str + slave_str
+            main_str = "--main=%s" % self.build_connection_string(main)
+            subordinate_str = " --subordinate=%s" % self.build_connection_string(destination)
+            conn_str = main_str + subordinate_str
             
             cmd = "mysqlreplicate.py --rpl-user=rpl:rpl %s" % conn_str
             try:
@@ -176,11 +176,11 @@ class test(replicate.test):
             except MUTLibError, e:
                 raise MUTLibError(e.errmsg)
         
-        # Check databases on slave and save results for 'BEFORE' check
+        # Check databases on subordinate and save results for 'BEFORE' check
         results.append(self._check_result(destination, "SHOW DATABASES LIKE 'util_test'"))
         results.append(self._check_result(destination, "SELECT COUNT(*) FROM util_test.t1"))
-        results.append(self._check_result(destination, "SHOW DATABASES LIKE 'master_db1'"))
-        results.append(self._check_result(destination, "SELECT COUNT(*) FROM master_db1.t1"))
+        results.append(self._check_result(destination, "SHOW DATABASES LIKE 'main_db1'"))
+        results.append(self._check_result(destination, "SELECT COUNT(*) FROM main_db1.t1"))
 
         # Run the commands
         for cmd_str in cmd_list:    
@@ -192,37 +192,37 @@ class test(replicate.test):
             except MUTLibError, e:
                 raise MUTLibError(e.errmsg)
 
-        # Wait for slave to catch up
+        # Wait for subordinate to catch up
         if not skip_wait:
             if self.debug:
-                print "# Waiting for slave to sync",
+                print "# Waiting for subordinate to sync",
             try:
-                self.wait_for_slave(destination, _MAX_ATTEMPTS)
+                self.wait_for_subordinate(destination, _MAX_ATTEMPTS)
             except MUTLibError, e:
                 raise MUTLibError(e.errmsg)
             if self.debug:
                 print "done."
 
-        # Check databases on slave and save results for 'AFTER' check
+        # Check databases on subordinate and save results for 'AFTER' check
         results.append(self._check_result(destination, "SHOW DATABASES LIKE 'util_test'"))
         results.append(self._check_result(destination, "SELECT COUNT(*) FROM util_test.t1"))
-        results.append(self._check_result(destination, "SHOW DATABASES LIKE 'master_db1'"))
-        results.append(self._check_result(destination, "SELECT COUNT(*) FROM master_db1.t1"))
+        results.append(self._check_result(destination, "SHOW DATABASES LIKE 'main_db1'"))
+        results.append(self._check_result(destination, "SELECT COUNT(*) FROM main_db1.t1"))
         
-        # Add something to master and check slave
-        res = master.exec_query("INSERT INTO master_db1.t1 VALUES (10), (11)")
-        # Wait for slave to catch up
+        # Add something to main and check subordinate
+        res = main.exec_query("INSERT INTO main_db1.t1 VALUES (10), (11)")
+        # Wait for subordinate to catch up
         if not skip_wait:
             if self.debug:
-                print "# Waiting for slave to sync",
+                print "# Waiting for subordinate to sync",
             try:
-                self.wait_for_slave(destination, _MAX_ATTEMPTS)
+                self.wait_for_subordinate(destination, _MAX_ATTEMPTS)
             except MUTLibError, e:
                 raise MUTLibError(e.errmsg)
             if self.debug:
                 print "done."
 
-        results.append(self._check_result(destination, "SELECT COUNT(*) FROM master_db1.t1"))
+        results.append(self._check_result(destination, "SELECT COUNT(*) FROM main_db1.t1"))
         
         if self.debug:
             print comment
@@ -236,16 +236,16 @@ class test(replicate.test):
     def run(self):
         from_conn = "--source=" + self.build_connection_string(self.server1)
         to_conn = "--destination=" + self.build_connection_string(self.server2)
-        db_list = ["master_db1"]
+        db_list = ["main_db1"]
 
         cmd_str = "mysqldbcopy.py %s --rpl-user=rpl:rpl --skip-gtid " % " ".join(db_list) + \
                   "%s %s " % (from_conn, to_conn)
 
-        # Copy master database
+        # Copy main database
         test_num = 1
-        comment = "Test case %s - Copy extra database from master to slave" % \
+        comment = "Test case %s - Copy extra database from main to subordinate" % \
                   test_num
-        cmd_opts = "--rpl=master "
+        cmd_opts = "--rpl=main "
         res = self.run_test_case(0, test_num, self.server1, self.server1,
                                  self.server2, [cmd_str], db_list,
                                  cmd_opts, comment, _TEST_CASE_RESULTS, False)
@@ -254,15 +254,15 @@ class test(replicate.test):
         test_num += 1
 
         to_conn = "--destination=" + self.build_connection_string(self.server3)
-        db_list = ["util_test", "master_db1"]
+        db_list = ["util_test", "main_db1"]
 
         cmd_str = "mysqldbcopy.py %s --rpl-user=rpl:rpl --skip-gtid " % " ".join(db_list) + \
                   "%s %s " % (from_conn, to_conn)
 
-        # Provision a new slave from master
-        comment = "Test case %s - Provision a new slave from the master" % \
+        # Provision a new subordinate from main
+        comment = "Test case %s - Provision a new subordinate from the main" % \
                   test_num
-        cmd_opts = "--rpl=master "
+        cmd_opts = "--rpl=main "
         res = self.run_test_case(0, test_num, self.server1, self.server1,
                                  self.server3, [cmd_str], db_list,
                                  cmd_opts, comment, _TEST_CASE_RESULTS, True)
@@ -276,10 +276,10 @@ class test(replicate.test):
         cmd_str = "mysqldbcopy.py %s --rpl-user=rpl:rpl --skip-gtid " % " ".join(db_list) + \
                   "%s %s " % (from_conn, to_conn)
 
-        # Provision a new slave from existing slave
-        comment = "Test case %s - Provision a new slave from existing slave" % \
+        # Provision a new subordinate from existing subordinate
+        comment = "Test case %s - Provision a new subordinate from existing subordinate" % \
                   test_num
-        cmd_opts = "--rpl=slave "
+        cmd_opts = "--rpl=subordinate "
         res = self.run_test_case(0, test_num, self.server1, self.server2,
                                  self.server3, [cmd_str], db_list,
                                  cmd_opts, comment, _TEST_CASE_RESULTS, True)
@@ -317,11 +317,11 @@ class test(replicate.test):
     
     def _drop_all(self):
         self.drop_db(self.server1, "util_test")
-        self.drop_db(self.server1, "master_db1")
+        self.drop_db(self.server1, "main_db1")
         self.drop_db(self.server2, "util_test")
-        self.drop_db(self.server2, "master_db1")
+        self.drop_db(self.server2, "main_db1")
         self.drop_db(self.server3, "util_test")
-        self.drop_db(self.server3, "master_db1")
+        self.drop_db(self.server3, "main_db1")
         return True
 
     def cleanup(self):
